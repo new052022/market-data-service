@@ -1,0 +1,53 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.5'
+	id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'monaco.bot'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '21'
+}
+
+def mapstructVersion = '1.4.2.Final'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.liquibase:liquibase-core'
+	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.1.1'
+	implementation 'commons-codec:commons-codec:1.17.0'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor ('org.projectlombok:lombok',
+	"org.mapstruct:mapstruct-processor:${mapstructVersion}",
+			'org.projectlombok:lombok-mapstruct-binding:0.2.0')
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+	testAnnotationProcessor 'org.projectlombok:lombok'
+	compileOnly "org.mapstruct:mapstruct:${mapstructVersion}"
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+compileJava {
+	options.compilerArgs += ['-Amapstruct.defaultComponentModel=spring',
+	'-Amapstruct.suppressGeneratorVersionInfoComment=true',
+	'-Amapstruct.verbose=true']
+}

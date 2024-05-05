@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    username:
+    password:
+    url: jdbc:postgresql://localhost:5432/market_data
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+
+secret-key-number:
