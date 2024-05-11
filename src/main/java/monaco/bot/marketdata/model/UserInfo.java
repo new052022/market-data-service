@@ -25,7 +25,7 @@ public class UserInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "username")
+    @Column(name = "username", unique = true, nullable = false)
     private String username;
 
     @Column(name = "api_key")
@@ -33,5 +33,8 @@ public class UserInfo {
 
     @Column(name = "secret_key")
     private String secretKey;
+
+    @Column(name = "exchange_name")
+    private String exchangeName;
 
 }

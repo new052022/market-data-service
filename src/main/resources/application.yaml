@@ -42,6 +42,10 @@ spring:
       topics:
         event:
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
 exchange-url:
   bingx-perpetual: https://open-api.bingx.com
 
