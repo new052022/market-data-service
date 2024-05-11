@@ -21,10 +21,4 @@ public class UserInfoResponseDto {
 
     private String username;
 
-    private String apiKey;
-
-    private String secretKey;
-
-    private String exchangeName;
-
 }
