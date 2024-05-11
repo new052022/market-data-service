@@ -11,6 +11,8 @@ import monaco.bot.marketdata.model.UserInfo;
 import monaco.bot.marketdata.service.interfaces.UserInfoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +36,15 @@ public class UserInfoController {
         UserInfo savedUser = userInfoService.save(newUser);
         UserInfoResponseDto response = userInfoMapper.toUserInfoResponseDto(savedUser);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("{id}")
+    @ApiResponse(responseCode = "200", description = "Success")
+    @Operation(tags = "User-info controller", description = "Get api user information")
+    public ResponseEntity<UserInfoResponseDto> getUserInfo(@PathVariable Long id) {
+        UserInfo user = userInfoService.getUser(id);
+        UserInfoResponseDto response = userInfoMapper.toUserInfoResponseDto(user);
+        return ResponseEntity.ok(response);
     }
 
 }
