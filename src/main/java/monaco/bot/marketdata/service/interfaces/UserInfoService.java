@@ -6,4 +6,5 @@ public interface UserInfoService {
 
     UserInfo save(UserInfo userInfo);
 
+    UserInfo getUser(Long id);
 }

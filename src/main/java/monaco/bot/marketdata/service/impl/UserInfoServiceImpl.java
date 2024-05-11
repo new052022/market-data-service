@@ -8,6 +8,8 @@ import monaco.bot.marketdata.service.interfaces.UserInfoService;
 import monaco.bot.marketdata.util.EncryptDecryptGenerator;
 import org.springframework.stereotype.Service;
 
+import java.util.NoSuchElementException;
+
 @Service
 @RequiredArgsConstructor
 public class UserInfoServiceImpl implements UserInfoService {
@@ -20,6 +22,12 @@ public class UserInfoServiceImpl implements UserInfoService {
     public UserInfo save(UserInfo userInfo) {
         this.encodeUserData(userInfo);
         return userInfoRepository.save(userInfo);
+    }
+
+    @Override
+    public UserInfo getUser(Long id) {
+        return userInfoRepository.findById(id).orElseThrow(() ->
+                new NoSuchElementException(String.format("User with id № %d doesn't exist", id)));
     }
 
     @SneakyThrows
