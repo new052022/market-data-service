@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Data
@@ -14,11 +13,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AssetPriceDto {
-
-    private String price;
+public class PeriodAssetPriceCandlesRequest {
 
     private String symbol;
 
-    private Timestamp time;
+    private String interval;
+
+    private Long limit;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
 }
