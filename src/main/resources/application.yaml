@@ -49,4 +49,6 @@ springdoc:
 exchange-url:
   bingx-perpetual: https://open-api.bingx.com
 
-secret-key-number: ${SECRET_NUMBER}
+secret-key: ${SECRET_NUMBER}
+
+algorithm: ${ALGORITHM}

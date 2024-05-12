@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import monaco.bot.marketdata.dto.AssetPriceDto;
+import monaco.bot.marketdata.dto.AssetPriceDataDto;
+import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
+import monaco.bot.marketdata.dto.SingleAssetPriceDto;
 import monaco.bot.marketdata.model.UserExchangeInfo;
 import monaco.bot.marketdata.service.interfaces.UserExchangeInfoService;
 import monaco.bot.marketdata.util.EncryptDecryptGenerator;
@@ -18,10 +20,17 @@ import org.springframework.web.client.RestTemplate;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.TreeMap;
 
 import static monaco.bot.marketdata.util.Constants.BINGX_API_KEY_NAME;
+import static monaco.bot.marketdata.util.Constants.END_TIME;
+import static monaco.bot.marketdata.util.Constants.INTERVAL;
+import static monaco.bot.marketdata.util.Constants.LIMIT;
+import static monaco.bot.marketdata.util.Constants.START_TIME;
 import static monaco.bot.marketdata.util.Constants.SYMBOL;
 import static monaco.bot.marketdata.util.Constants.TIMESTAMP;
 
@@ -39,16 +48,17 @@ public class BingxFeatureClient {
     private final UserExchangeInfoService exchangeInfoService;
 
     private static final String ASSET_PRICE_PATH = "/openApi/swap/v1/ticker/price";
+    private static final String CANDLE_ASSET_PRICE_PATH = "/openApi/swap/v3/quote/klines";
 
     @Value("${exchange-url.bingx-perpetual}")
     private String url;
 
     @SneakyThrows
-    public AssetPriceDto getAssetPrice(String symbol, Long userId, String exchange) {
-        UserExchangeInfo exchangeInfo = exchangeInfoService.getExchangeInfoByNameAndUserId(userId,exchange);
+    public SingleAssetPriceDto getAssetPrice(String symbol, Long userId, String exchange) {
+        UserExchangeInfo exchangeInfo = exchangeInfoService.getExchangeInfoByNameAndUserId(userId, exchange);
         String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
         String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
-        String parametersString = this.getParamsString(symbol, secretKey);
+        String parametersString = this.getAssetParamsString(symbol, secretKey);
         String requestUrl = this.getRequestUrl(ASSET_PRICE_PATH, parametersString);
         HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
         HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
@@ -59,17 +69,55 @@ public class BingxFeatureClient {
                 requestUrl,
                 HttpMethod.GET,
                 entity,
-                AssetPriceDto.class).getBody();
+                SingleAssetPriceDto.class).getBody();
     }
 
     @SneakyThrows
-    private String getParamsString(String symbol, String secretKey) {
+    public AssetPriceDataDto getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request, Long userId,
+                                                        String exchange) {
+        UserExchangeInfo exchangeInfo = exchangeInfoService.getExchangeInfoByNameAndUserId(userId, exchange);
+        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
+        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+        String parametersString = this.getAssetPriceCandlesParamsString(request, secretKey);
+        String requestUrl = this.getRequestUrl(CANDLE_ASSET_PRICE_PATH, parametersString);
+        HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
+        HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
+        log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
+                        " | asset's params : {} | action: {}",
+                Timestamp.from(Instant.now()), request, "get period asset price candles");
+        return restTemplate.exchange(
+                requestUrl,
+                HttpMethod.GET,
+                entity,
+                AssetPriceDataDto.class).getBody();
+    }
+
+    @SneakyThrows
+    private String getAssetPriceCandlesParamsString(PeriodAssetPriceCandlesRequest request, String secretKey) {
+        TreeMap<String, String> parameters = new TreeMap<>();
+        parameters.put(TIMESTAMP, "" + new Timestamp(System.currentTimeMillis()).getTime());
+        parameters.put(SYMBOL, request.getSymbol());
+        parameters.put(INTERVAL, request.getInterval());
+        parameters.put(START_TIME, this.convertToMillisecs(request.getStartTime()) + "");
+        parameters.put(END_TIME, this.convertToMillisecs(request.getEndTime()) + "");
+        parameters.put(LIMIT, String.valueOf(request.getLimit()));
+        String valueToDigest = this.getMessageToDigest(parameters);
+        String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
+        return valueToDigest + "&signature=" + signature;
+    }
+
+    @SneakyThrows
+    private String getAssetParamsString(String symbol, String secretKey) {
         TreeMap<String, String> parameters = new TreeMap<>();
         parameters.put(TIMESTAMP, "" + new Timestamp(System.currentTimeMillis()).getTime());
         parameters.put(SYMBOL, symbol);
         String valueToDigest = this.getMessageToDigest(parameters);
         String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
         return valueToDigest + "&signature=" + signature;
+    }
+
+    private Long convertToMillisecs(LocalDateTime time) {
+        return ZonedDateTime.of(time, ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     private String getMessageToDigest(TreeMap<String, String> parameters) {
