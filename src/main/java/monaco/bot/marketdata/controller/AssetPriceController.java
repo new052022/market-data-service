@@ -7,18 +7,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import monaco.bot.marketdata.client.impl.BingxFeatureClient;
 import monaco.bot.marketdata.dto.AssetPriceDataDto;
-import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SingleAssetPriceDto;
-import monaco.bot.marketdata.util.EncryptDecryptGenerator;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 @RestController
 @RequiredArgsConstructor
