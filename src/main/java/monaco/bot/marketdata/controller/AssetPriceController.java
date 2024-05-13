@@ -6,14 +6,20 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import monaco.bot.marketdata.client.impl.BingxFeatureClient;
+import monaco.bot.marketdata.dto.AssetContractDataDto;
 import monaco.bot.marketdata.dto.AssetPriceDataDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SingleAssetPriceDto;
+import monaco.bot.marketdata.model.AssetContract;
+import monaco.bot.marketdata.model.UserExchangeInfo;
+import monaco.bot.marketdata.service.interfaces.UserExchangeInfoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,12 +29,15 @@ public class AssetPriceController {
 
     private final BingxFeatureClient bingxFeatureClient;
 
+    private final UserExchangeInfoService exchangeInfoService;
+
     @SneakyThrows
     @GetMapping("{userId}")
     @ApiResponse(responseCode = "200", description = "Success")
     @Operation(tags = "Asset-price controller", description = "Get asset price")
     public ResponseEntity<SingleAssetPriceDto> getAssetPrice(@PathVariable Long userId, String symbol, String exchange) {
-        return ResponseEntity.ok(bingxFeatureClient.getAssetPrice(symbol,userId,exchange));
+        UserExchangeInfo exchangeInfo = exchangeInfoService.getExchangeInfoByNameAndUserId(userId, exchange);
+        return ResponseEntity.ok(bingxFeatureClient.getAssetPrice(symbol,exchangeInfo));
     }
 
     @SneakyThrows
@@ -37,7 +46,17 @@ public class AssetPriceController {
     @Operation(tags = "Asset-price controller", description = "Get period asset's candle price")
     public ResponseEntity<AssetPriceDataDto> getAssetPriceCandles(@PathVariable Long userId, String exchange,
                                                          PeriodAssetPriceCandlesRequest request) {
-        return ResponseEntity.ok(bingxFeatureClient.getPeriodAssetPriceCandles(request,userId,exchange));
+        UserExchangeInfo exchangeInfo = exchangeInfoService.getExchangeInfoByNameAndUserId(userId, exchange);
+        return ResponseEntity.ok(bingxFeatureClient.getPeriodAssetPriceCandles(request,exchangeInfo));
+    }
+
+    @SneakyThrows
+    @GetMapping("asset-details/{userId}")
+    @ApiResponse(responseCode = "200", description = "Success")
+    @Operation(tags = "Asset-price controller", description = "Get asset details")
+    public ResponseEntity<List<AssetContract>> getAssetDetails(@PathVariable Long userId, String exchange) {
+        UserExchangeInfo exchangeInfo = exchangeInfoService.getExchangeInfoByNameAndUserId(userId, exchange);
+        return ResponseEntity.ok(bingxFeatureClient.getAssetDetails(exchangeInfo));
     }
 
 }

@@ -36,9 +36,14 @@ public class UserExchangeInfoServiceImpl implements UserExchangeInfoService {
     @Override
     public UserExchangeInfo getExchangeInfoByNameAndUserId(Long userId, String exchange) {
         return userInfoService.getUser(userId).getExchanges().stream()
-                .filter(exch -> exch.getExchangeName().equalsIgnoreCase(exchange))
+                .filter(exch -> exch.getExchange().getName().equalsIgnoreCase(exchange))
                 .findFirst().orElseThrow(() -> new NoSuchElementException(
                         String.format("User with id №%d doesn't have info about exchange - %s", userId, exchange)));
+    }
+
+    @Override
+    public List<UserExchangeInfo> findById(long userId) {
+        return exchangeInfoRepository.findByUserInfoId(userId);
     }
 
     @SneakyThrows

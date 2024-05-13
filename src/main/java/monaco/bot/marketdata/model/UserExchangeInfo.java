@@ -8,6 +8,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -24,6 +26,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "user_exchange_info")
+@NamedEntityGraph(name = "user-exchange",
+        attributeNodes = {
+                @NamedAttributeNode("exchange")
+        })
 public class UserExchangeInfo {
 
     @Id
@@ -36,8 +42,9 @@ public class UserExchangeInfo {
     @Column(name = "secret_key")
     private String secretKey;
 
-    @Column(name = "exchange_name", unique = true, nullable = false)
-    private String exchangeName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "exchange_id")
+    private Exchange exchange;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

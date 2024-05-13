@@ -11,4 +11,6 @@ public interface UserExchangeInfoService {
     List<UserExchangeInfo> getExchanges(Long userId);
 
     UserExchangeInfo getExchangeInfoByNameAndUserId(Long userId, String exchange);
+
+    List<UserExchangeInfo> findById(long userId);
 }
