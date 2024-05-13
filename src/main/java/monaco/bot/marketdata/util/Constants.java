@@ -19,4 +19,10 @@ public class Constants {
 
     public final static String LIMIT = "limit";
 
+    public static String RECV_WINDOW = "recvWindow";
+
+    public static final String SIGNATURE = "signature";
+
+    public static final String BINANCE_API_KEY_NAME = "X-MBX-APIKEY";
+
 }

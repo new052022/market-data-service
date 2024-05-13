@@ -1,32 +1,26 @@
-package monaco.bot.marketdata.dto;
+package monaco.bot.marketdata.dto.binance;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.sql.Timestamp;
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AssetCandleDto {
-
-    private Double open;
-
-    private Double close;
-
-    private Double high;
-
-    private Double low;
-
-    private Double volume;
-
-    private Timestamp time;
+public class LeverageDto {
 
     private String symbol;
+
+    private Double notionalCoef;
+
+    private List<BracketDto> brackets;
 
 }

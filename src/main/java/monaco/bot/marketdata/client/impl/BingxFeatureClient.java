@@ -1,25 +1,24 @@
 package monaco.bot.marketdata.client.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
+import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.AssetContractDataDto;
 import monaco.bot.marketdata.dto.AssetPriceDataDto;
+import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SingleAssetPriceDto;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.model.UserExchangeInfo;
-import monaco.bot.marketdata.service.interfaces.AssetContractService;
 import monaco.bot.marketdata.util.EncryptDecryptGenerator;
 import monaco.bot.marketdata.util.SignatureGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -30,7 +29,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static monaco.bot.marketdata.util.Constants.BINGX_API_KEY_NAME;
 import static monaco.bot.marketdata.util.Constants.END_TIME;
@@ -47,8 +48,6 @@ public class BingxFeatureClient implements MarketDataClient {
 
     private final RestTemplate restTemplate;
 
-    private final ObjectMapper objectMapper;
-
     private final EncryptDecryptGenerator encryptDecryptGenerator;
 
     private final AssetContractMapper assetContractMapper;
@@ -64,7 +63,7 @@ public class BingxFeatureClient implements MarketDataClient {
 
     @SneakyThrows
     @Override
-    public SingleAssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo) {
+    public AssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo) {
         String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
         String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
         String parametersString = this.getAssetParamsString(symbol, secretKey);
@@ -74,11 +73,11 @@ public class BingxFeatureClient implements MarketDataClient {
         log.info("[TRADING BOT] Time: {} | Market-data-service | get asset price" +
                         " | asset's name : {} | action: {}",
                 Timestamp.from(Instant.now()), symbol, "get asset price");
-        return restTemplate.exchange(
+        return Objects.requireNonNull(restTemplate.exchange(
                 requestUrl,
                 HttpMethod.GET,
                 entity,
-                SingleAssetPriceDto.class).getBody();
+                SingleAssetPriceDto.class).getBody()).getData();
     }
 
     @SneakyThrows
@@ -104,8 +103,8 @@ public class BingxFeatureClient implements MarketDataClient {
 
     @SneakyThrows
     @Override
-    public AssetPriceDataDto getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request,
-                                                        UserExchangeInfo exchangeInfo) {
+    public List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request,
+                                                           UserExchangeInfo exchangeInfo) {
         String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
         String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
         String parametersString = this.getAssetPriceCandlesParamsString(request, secretKey);
@@ -115,11 +114,12 @@ public class BingxFeatureClient implements MarketDataClient {
         log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
                         " | asset's params : {} | action: {}",
                 Timestamp.from(Instant.now()), request, "get period asset price candles");
-        return restTemplate.exchange(
-                requestUrl,
-                HttpMethod.GET,
-                entity,
-                AssetPriceDataDto.class).getBody();
+        return Objects.requireNonNull(restTemplate.exchange(
+                        requestUrl,
+                        HttpMethod.GET,
+                        entity,
+                        AssetPriceDataDto.class).getBody()).getData().stream()
+                .peek(asset -> asset.setSymbol(request.getSymbol())).collect(Collectors.toList());
     }
 
     @SneakyThrows
