@@ -2,4 +2,10 @@ databaseChangeLog:
   - include:
       file: db/changelog/db.create_user_info_table.sql
   - include:
+      file: db/changelog/db.create_exchange_table.sql
+  - include:
+      file: db/changelog/db.insert_into_exchange_table.sql
+  - include:
       file: db/changelog/db.create_user_exchange_info_table.sql
+  - include:
+      file: db/changelog/db.create_asset_contract_table.sql
