@@ -2,6 +2,9 @@ package monaco.bot.marketdata.mapper;
 
 import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.binance.CandleStickDataDto;
+import monaco.bot.marketdata.dto.binance.LeverageDto;
+import monaco.bot.marketdata.dto.binance.exchangeInfo.SymbolDto;
+import monaco.bot.marketdata.model.AssetContract;
 import org.springframework.stereotype.Component;
 
 @Component

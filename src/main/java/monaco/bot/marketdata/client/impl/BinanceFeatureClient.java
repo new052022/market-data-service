@@ -10,7 +10,9 @@ import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.binance.CandleStickDataDto;
 import monaco.bot.marketdata.dto.binance.LeverageDto;
+import monaco.bot.marketdata.dto.binance.exchangeInfo.AssetInfoDto;
 import monaco.bot.marketdata.mapper.AssetCandleConverter;
+import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.model.UserExchangeInfo;
 import monaco.bot.marketdata.util.EncryptDecryptGenerator;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static monaco.bot.marketdata.util.Constants.*;
@@ -48,6 +51,8 @@ public class BinanceFeatureClient implements MarketDataClient {
 
     private final AssetCandleConverter candleConverter;
 
+    private final AssetContractMapper assetContractMapper;
+
     private final EncryptDecryptGenerator encryptDecryptGenerator;
 
     @Value("${exchange-url.binance-perpetual.v1}")
@@ -58,6 +63,8 @@ public class BinanceFeatureClient implements MarketDataClient {
     public static String PRICE_PATH = "/ticker/price";
 
     public static final String LEVERAGE_BRACKET = "/leverageBracket";
+
+    public static final String EXCHANGE_INFO = "/exchangeInfo";
 
     @Override
     public AssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo) {
@@ -97,12 +104,20 @@ public class BinanceFeatureClient implements MarketDataClient {
 
     @Override
     public List<AssetContract> getAssetDetails(UserExchangeInfo exchangeInfo) {
-        List<LeverageDto> leverages = this.getLeverages(exchangeInfo);
-        return null;
+        Map<String, LeverageDto> leverageMap = this.getLeverages(exchangeInfo).stream()
+                .collect(Collectors.toMap(LeverageDto::getSymbol, Function.identity()));
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url + EXCHANGE_INFO);
+        return Objects.requireNonNull(restTemplate.exchange(
+                        uriBuilder.toUriString(),
+                        HttpMethod.GET,
+                        null,
+                        AssetInfoDto.class).getBody()).getSymbols().stream()
+                .map(symbol -> assetContractMapper.toAssetCandleDto(symbol, leverageMap.get(symbol.getSymbol())))
+                .collect(Collectors.toList());
     }
 
     @SneakyThrows
-    private List<LeverageDto> getLeverages(UserExchangeInfo exchangeInfo) {
+    public List<LeverageDto> getLeverages(UserExchangeInfo exchangeInfo) {
         String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
         String recvWindows = "15000";
         String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
