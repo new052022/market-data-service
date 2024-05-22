@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -114,12 +115,11 @@ public class BingxFeatureClient implements MarketDataClient {
         log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
                         " | asset's params : {} | action: {}",
                 Timestamp.from(Instant.now()), request, "get period asset price candles");
-        return Objects.requireNonNull(restTemplate.exchange(
-                        requestUrl,
-                        HttpMethod.GET,
-                        entity,
-                        AssetPriceDataDto.class).getBody()).getData().stream()
-                .peek(asset -> asset.setSymbol(request.getSymbol())).collect(Collectors.toList());
+        AssetPriceDataDto data = restTemplate.exchange(requestUrl, HttpMethod.GET,
+                entity, AssetPriceDataDto.class).getBody();
+        return data.getData().stream()
+                .peek(asset -> asset.setSymbol(request.getSymbol()))
+                .collect(Collectors.toList());
     }
 
     @SneakyThrows

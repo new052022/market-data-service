@@ -85,8 +85,15 @@ public class AssetContract {
     @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "assetContract", cascade = {
             CascadeType.PERSIST,
-            CascadeType.MERGE
-    })
+            CascadeType.MERGE,
+            CascadeType.REMOVE
+    }, orphanRemoval = true)
     private Set<FilterType> filters;
+
+    public void setFilters() {
+        for (FilterType filterType : filters) {
+            filterType.setAssetContract(this);
+        }
+    }
 
 }

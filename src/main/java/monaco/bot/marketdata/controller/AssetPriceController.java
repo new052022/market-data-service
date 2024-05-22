@@ -8,10 +8,13 @@ import lombok.SneakyThrows;
 import monaco.bot.marketdata.client.impl.BingxFeatureClient;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
 import monaco.bot.marketdata.dto.AssetCandleDto;
+import monaco.bot.marketdata.dto.AssetContractResponseDto;
 import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
+import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.model.UserExchangeInfo;
+import monaco.bot.marketdata.service.interfaces.AssetContractService;
 import monaco.bot.marketdata.service.interfaces.UserExchangeInfoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +33,11 @@ public class AssetPriceController {
 
     private final Map<String, MarketDataClient> featureClients;
 
+    private final AssetContractService assetContractService;
+
     private final UserExchangeInfoService exchangeInfoService;
+
+    private final AssetContractMapper assetContractMapper;
 
     @SneakyThrows
     @GetMapping("{userId}")
@@ -52,12 +59,12 @@ public class AssetPriceController {
     }
 
     @SneakyThrows
-    @GetMapping("asset-details/{userId}")
+    @GetMapping("asset-details")
     @ApiResponse(responseCode = "200", description = "Success")
     @Operation(tags = "Asset-price controller", description = "Get asset details")
-    public ResponseEntity<List<AssetContract>> getAssetDetails(@PathVariable Long userId, String exchange) {
-        UserExchangeInfo exchangeInfo = exchangeInfoService.getExchangeInfoByNameAndUserId(userId, exchange);
-        return ResponseEntity.ok(featureClients.get(exchange).getAssetDetails(exchangeInfo));
+    public ResponseEntity<List<AssetContractResponseDto>> getAssetDetails(String exchange) {
+        return ResponseEntity.ok(assetContractMapper.getAssetContractDtoList(
+                assetContractService.getByExchange(exchange)));
     }
 
 

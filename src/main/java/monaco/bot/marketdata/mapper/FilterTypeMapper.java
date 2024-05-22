@@ -1,11 +1,13 @@
 package monaco.bot.marketdata.mapper;
 
+import monaco.bot.marketdata.dto.FilterTypeResonseDto;
 import monaco.bot.marketdata.dto.binance.exchangeInfo.FilterDto;
 import monaco.bot.marketdata.model.FilterType;
 import monaco.bot.marketdata.service.interfaces.FilterTypeService;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -15,8 +17,28 @@ import java.util.stream.Collectors;
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class FilterTypeMapper {
 
-    @Autowired
-    private FilterTypeService filterTypeService;
+    public List<FilterTypeResonseDto> toFilterTypeResponseDtoList(Set<FilterType> filterTypes) {
+        if (CollectionUtils.isEmpty(filterTypes)) {
+            return null;
+        }
+        return filterTypes.stream()
+                .map(type -> FilterTypeResonseDto.builder()
+                        .id(type.getId())
+                        .maxPrice(type.getMaxPrice())
+                        .FilterType(type.getFilterType())
+                        .minQty(type.getMinQty())
+                        .multiplierDown(type.getMultiplierDown())
+                        .multiplierUp(type.getMultiplierUp())
+                        .multiplierDecimal(type.getMultiplierDecimal())
+                        .stepSize(type.getStepSize())
+                        .limit(type.getLimit())
+                        .maxQty(type.getMaxQty())
+                        .minPrice(type.getMinPrice())
+                        .notional(type.getNotional())
+                        .tickSize(type.getTickSize())
+                        .build())
+                .collect(Collectors.toList());
+    }
 
 
     public Set<FilterType> toFilters(List<FilterDto> filters) {

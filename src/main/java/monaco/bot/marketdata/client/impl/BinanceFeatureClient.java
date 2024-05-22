@@ -112,7 +112,8 @@ public class BinanceFeatureClient implements MarketDataClient {
                         HttpMethod.GET,
                         null,
                         AssetInfoDto.class).getBody()).getSymbols().stream()
-                .map(symbol -> assetContractMapper.toAssetCandleDto(symbol, leverageMap.get(symbol.getSymbol())))
+                .map(symbol -> assetContractMapper.toAssetCandleDto(symbol, leverageMap.get(symbol.getSymbol()),
+                        exchangeInfo.getExchange()))
                 .collect(Collectors.toList());
     }
 
