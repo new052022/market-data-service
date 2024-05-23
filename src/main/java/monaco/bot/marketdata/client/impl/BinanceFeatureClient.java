@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
 import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.AssetPriceDto;
+import monaco.bot.marketdata.dto.ChangeLeverageDto;
+import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.binance.CandleStickDataDto;
 import monaco.bot.marketdata.dto.binance.LeverageDto;
@@ -115,6 +117,16 @@ public class BinanceFeatureClient implements MarketDataClient {
                 .map(symbol -> assetContractMapper.toAssetCandleDto(symbol, leverageMap.get(symbol.getSymbol()),
                         exchangeInfo.getExchange()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public LeverageSizeDto getSymbolLeverage(String symbol, UserExchangeInfo exchangeInfo) {
+        return null;
+    }
+
+    @Override
+    public ChangeLeverageDto updateSymbolLeverage(String symbol, Long leverage, String side, UserExchangeInfo exchangeInfo) {
+        return null;
     }
 
     @SneakyThrows

@@ -7,6 +7,10 @@ public class Constants {
 
     public final static String SYMBOL = "symbol";
 
+    public final static String SIDE = "side";
+
+    public final static String LEVERAGE = "leverage";
+
     public final static String TIMESTAMP = "timestamp";
 
     public final static String BINGX_API_KEY_NAME = "X-BX-APIKEY";
