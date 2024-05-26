@@ -85,14 +85,15 @@ public class BingxFeatureClient implements MarketDataClient {
                 entity,
                 SymbolLeverageResponseDto.class).getBody()).getData();
         data.setSymbol(symbol);
+        data.setExchange(exchangeInfo.getExchange().getName());
         return data;
     }
 
-    public ChangeLeverageDto updateSymbolLeverage(String symbol,Long leverage,
-                                                String side, UserExchangeInfo exchangeInfo) {
+    public ChangeLeverageDto updateSymbolLeverage(String symbol, Long leverage,
+                                                  String side, UserExchangeInfo exchangeInfo) {
         String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
         String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
-        String parametersString = this.getAssetParamsString(symbol,side,leverage, secretKey);
+        String parametersString = this.getAssetParamsString(symbol, side, leverage, secretKey);
         String requestUrl = this.getRequestUrl(SYMBOL_LEVERAGE_PATH, parametersString);
         HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
         HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
@@ -164,7 +165,13 @@ public class BingxFeatureClient implements MarketDataClient {
         AssetPriceDataDto data = restTemplate.exchange(requestUrl, HttpMethod.GET,
                 entity, AssetPriceDataDto.class).getBody();
         return data.getData().stream()
+                .peek(asset -> {
+                    Double openPrice = asset.getOpen();
+                    Double closePrice = asset.getClose();
+                    asset.setVolume(asset.getVolume() * ((openPrice + closePrice)/2));
+                })
                 .peek(asset -> asset.setSymbol(request.getSymbol()))
+                .peek(asset -> asset.setExchange(exchangeInfo.getExchange().getName()))
                 .collect(Collectors.toList());
     }
 
@@ -183,7 +190,7 @@ public class BingxFeatureClient implements MarketDataClient {
     }
 
     @SneakyThrows
-    private String getAssetParamsString(String symbol,String side, Long leverage, String secretKey) {
+    private String getAssetParamsString(String symbol, String side, Long leverage, String secretKey) {
         TreeMap<String, String> parameters = new TreeMap<>();
         parameters.put(TIMESTAMP, "" + new Timestamp(System.currentTimeMillis()).getTime());
         parameters.put(SYMBOL, symbol);

@@ -13,6 +13,7 @@ import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.binance.CandleStickDataDto;
 import monaco.bot.marketdata.dto.binance.LeverageDto;
 import monaco.bot.marketdata.dto.binance.exchangeInfo.AssetInfoDto;
+import monaco.bot.marketdata.dto.binance.exchangeInfo.LeverageChangeResponseDto;
 import monaco.bot.marketdata.mapper.AssetCandleConverter;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
@@ -35,6 +36,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -67,6 +69,8 @@ public class BinanceFeatureClient implements MarketDataClient {
     public static final String LEVERAGE_BRACKET = "/leverageBracket";
 
     public static final String EXCHANGE_INFO = "/exchangeInfo";
+
+    public static final String LEVERAGE_PATH = "/leverage";
 
     @Override
     public AssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo) {
@@ -101,6 +105,7 @@ public class BinanceFeatureClient implements MarketDataClient {
         return data.stream()
                 .map(candleConverter::convertToAssetCandleDto)
                 .peek(asset -> asset.setSymbol(request.getSymbol()))
+                .peek(asset -> asset.setExchange(exchangeInfo.getExchange().getName()))
                 .collect(Collectors.toList());
     }
 
@@ -121,12 +126,43 @@ public class BinanceFeatureClient implements MarketDataClient {
 
     @Override
     public LeverageSizeDto getSymbolLeverage(String symbol, UserExchangeInfo exchangeInfo) {
-        return null;
+        List<LeverageDto> leverages = this.getLeverages(exchangeInfo);
+        Optional<LeverageDto> leverageResponse = leverages.stream()
+                .filter(leverage -> leverage.getSymbol().equalsIgnoreCase(symbol))
+                .findFirst();
+        if (leverageResponse.isEmpty()) {
+            return null;
+        } else {
+            Map<String, LeverageDto> leverageMap = leverages.stream()
+                    .collect(Collectors.toMap(LeverageDto::getSymbol, Function.identity()));
+            long leverage = leverageMap.get(symbol).getBrackets().get(0).getInitialLeverage().longValue();
+            return LeverageSizeDto.builder()
+                    .symbol(symbol)
+                    .maxLongLeverage(leverage)
+                    .maxShortLeverage(leverage)
+                    .longLeverage(leverage)
+                    .shortLeverage(leverage)
+                    .exchange(exchangeInfo.getExchange().getName())
+                    .build();
+        }
     }
 
     @Override
     public ChangeLeverageDto updateSymbolLeverage(String symbol, Long leverage, String side, UserExchangeInfo exchangeInfo) {
-        return null;
+        String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
+        String recvWindows = "15000";
+        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
+        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+        String params = this.getAssetsUpdateString(secretKey, time, recvWindows, symbol, leverage);
+        String requestUrl = this.getRequestUrl(LEVERAGE_PATH, params);
+        HttpHeaders headers = this.addHttpHeaders(BINANCE_API_KEY_NAME, apiKey);
+        LeverageChangeResponseDto leverageResponse = restTemplate.exchange(
+                requestUrl, HttpMethod.POST, new HttpEntity<>(headers),
+                LeverageChangeResponseDto.class).getBody();
+        return ChangeLeverageDto.builder()
+                .leverage(Objects.requireNonNull(leverageResponse).getLeverage())
+                .symbol(leverageResponse.getSymbol())
+                .build();
     }
 
     @SneakyThrows
@@ -153,6 +189,19 @@ public class BinanceFeatureClient implements MarketDataClient {
         TreeMap<String, String> parameters = new TreeMap<>();
         parameters.put(TIMESTAMP, time);
         parameters.put(RECV_WINDOW, recvWindow);
+        String valueToDigest = this.getMessageToDigest(parameters);
+        String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
+        return valueToDigest + "&signature=" + signature;
+    }
+
+    @SneakyThrows
+    private String getAssetsUpdateString(String secretKey, String time, String recvWindow, String symbol,
+                                         Long leverage) {
+        TreeMap<String, String> parameters = new TreeMap<>();
+        parameters.put(TIMESTAMP, time);
+        parameters.put(RECV_WINDOW, recvWindow);
+        parameters.put(SYMBOL, symbol);
+        parameters.put(LEVERAGE, leverage.toString());
         String valueToDigest = this.getMessageToDigest(parameters);
         String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
         return valueToDigest + "&signature=" + signature;

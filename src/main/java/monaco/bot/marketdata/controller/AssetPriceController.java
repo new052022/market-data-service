@@ -12,6 +12,9 @@ import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.ChangeLeverageDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
+import monaco.bot.marketdata.dto.SymbolParamsDto;
+import monaco.bot.marketdata.dto.SymbolRequestDto;
+import monaco.bot.marketdata.dto.SymbolResponseDto;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.UserExchangeInfo;
 import monaco.bot.marketdata.service.interfaces.AssetContractService;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -79,12 +83,11 @@ public class AssetPriceController {
     }
 
     /**
-     *
-     * @param userId user id
+     * @param userId   user id
      * @param exchange Bingx/Binance
-     * @param symbol ex - BTC-USDT
+     * @param symbol   ex - BTC-USDT
      * @param leverage number
-     * @param side LONG/SHORT
+     * @param side     LONG/SHORT
      * @return
      */
     @SneakyThrows
@@ -95,6 +98,14 @@ public class AssetPriceController {
                                                                   String symbol, Long leverage, String side) {
         UserExchangeInfo exchangeInfo = exchangeInfoService.getExchangeInfoByNameAndUserId(userId, exchange);
         return ResponseEntity.ok(featureClients.get(exchange).updateSymbolLeverage(symbol, leverage, side, exchangeInfo));
+    }
+
+    @SneakyThrows
+    @GetMapping("symbol-data")
+    @ApiResponse(responseCode = "200", description = "Success")
+    @Operation(tags = "Asset-price controller", description = "Get symbols' data")
+    public ResponseEntity<SymbolResponseDto> getSymbolData(SymbolRequestDto requestDto) {
+        return ResponseEntity.ok(assetContractService.getSymbolsByParams(requestDto));
     }
 
 }

@@ -12,7 +12,7 @@ public class AssetCandleConverter {
 
     public AssetCandleDto convertToAssetCandleDto(CandleStickDataDto data){
         return AssetCandleDto.builder()
-                .volume(data.getVolume())
+                .volume(data.getQuoteAssetVolume())
                 .low(data.getLowPrice())
                 .high(data.getHighPrice())
                 .open(data.getOpenPrice())

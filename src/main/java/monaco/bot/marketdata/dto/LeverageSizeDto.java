@@ -23,4 +23,6 @@ public class LeverageSizeDto {
 
     private String symbol;
 
+    private String exchange;
+
 }

@@ -15,3 +15,5 @@ databaseChangeLog:
       file: db/changelog/db.create_filter_type_table.sql
   - include:
       file: db/changelog/db.alter_table_filter_type.sql
+  - include:
+      file: db/changelog/db.create_user_symbol_leverage_table.sql

@@ -6,29 +6,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AssetCandleDto {
+public class SymbolResponseDto {
 
-    private Double open;
+    private Long userId;
 
-    private Double close;
+    private Long volume;
 
-    private Double high;
+    private Long leverage;
 
-    private Double low;
-
-    private Double volume;
-
-    private Timestamp time;
-
-    private String symbol;
-
-    private String exchange;
+    private List<ExchangeSymbolsRequestDto> exchanges;
 
 }

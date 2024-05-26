@@ -27,7 +27,7 @@ public class CandleStickDataDto {
 
     private Timestamp closeTime;
 
-    private String quoteAssetVolume;
+    private Double quoteAssetVolume;
 
     private Long numberOfTrades;
 
@@ -48,7 +48,7 @@ public class CandleStickDataDto {
             @JsonProperty("close_price") Double closePrice,
             @JsonProperty("volume") Double volume,
             @JsonProperty("close_time") Timestamp closeTime,
-            @JsonProperty("quote_asset_volume") String quoteAssetVolume,
+            @JsonProperty("quote_asset_volume") Double quoteAssetVolume,
             @JsonProperty("number_of_trades") Long numberOfTrades,
             @JsonProperty("taker_buy_base_asset_volume") Double takerBuyBaseAssetVolume,
             @JsonProperty("taker_buy_quote_asset_volume") Double takerBuyQuoteAssetVolume,
