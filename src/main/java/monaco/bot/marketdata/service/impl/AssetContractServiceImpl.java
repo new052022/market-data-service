@@ -149,9 +149,10 @@ public class AssetContractServiceImpl implements AssetContractService {
                 .collect(Collectors.toList());
     }
 
-    private List<SymbolParamsDto> retrieveSymbolParams(List<AssetCandleDto> assetCandleDtos, List<AssetContract> assetContracts) {
+    private List<SymbolParamsDto> retrieveSymbolParams
+            (List<AssetCandleDto> assetCandleDtos, List<AssetContract> assetContracts) {
         Map<String, AssetContract> assets = assetContracts.stream()
-                .filter(asset ->  asset.getBinanceContractType() == null ||
+                .filter(asset -> asset.getBinanceContractType() == null ||
                         asset.getBinanceContractType().equalsIgnoreCase("PERPETUAL"))
                 .collect(Collectors.toMap(AssetContract::getSymbol, Function.identity()));
         return assetCandleDtos.stream()
@@ -176,7 +177,8 @@ public class AssetContractServiceImpl implements AssetContractService {
                 .collect(Collectors.toList());
     }
 
-    private Map<String, List<AssetCandleDto>> filterByVolume(Map<String, List<AssetCandleDto>> exchangeCandles, Long volume) {
+    private Map<String, List<AssetCandleDto>> filterByVolume
+            (Map<String, List<AssetCandleDto>> exchangeCandles, Long volume) {
         log.info("[TRADING BOT] Time: {} | Market-data-service | filterByVolume" +
                         " | asset's volume : {} | action: {}",
                 Timestamp.from(Instant.now()), volume, "filter assets by volume");
