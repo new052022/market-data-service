@@ -13,12 +13,28 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AssetPriceDto {
-
-    private String price;
+public class SymbolParamsDto {
 
     private String symbol;
 
-    private Timestamp time;
+    private Double tickSize;
+
+    private Double stepSize;
+
+    private Timestamp openTime;
+
+    private Double openPrice;
+
+    private Double highPrice;
+
+    private Double lowPrice;
+
+    private Double closePrice;
+
+    private Timestamp closeTime;
+
+    private Double volume;
+
+    private String quoteAssetVolume;
 
 }

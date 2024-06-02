@@ -6,19 +6,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AssetPriceDto {
+public class ExchangeResponseDto {
 
-    private String price;
+    private Long id;
 
-    private String symbol;
-
-    private Timestamp time;
+    private String name;
 
 }

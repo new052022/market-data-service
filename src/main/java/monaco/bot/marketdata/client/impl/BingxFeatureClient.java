@@ -1,25 +1,28 @@
 package monaco.bot.marketdata.client.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
+import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.AssetContractDataDto;
 import monaco.bot.marketdata.dto.AssetPriceDataDto;
+import monaco.bot.marketdata.dto.AssetPriceDto;
+import monaco.bot.marketdata.dto.ChangeLeverageDto;
+import monaco.bot.marketdata.dto.ChangeLeverageResponseDto;
+import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SingleAssetPriceDto;
+import monaco.bot.marketdata.dto.SymbolLeverageResponseDto;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.model.UserExchangeInfo;
-import monaco.bot.marketdata.service.interfaces.AssetContractService;
 import monaco.bot.marketdata.util.EncryptDecryptGenerator;
 import monaco.bot.marketdata.util.SignatureGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -30,12 +33,16 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static monaco.bot.marketdata.util.Constants.BINGX_API_KEY_NAME;
 import static monaco.bot.marketdata.util.Constants.END_TIME;
 import static monaco.bot.marketdata.util.Constants.INTERVAL;
+import static monaco.bot.marketdata.util.Constants.LEVERAGE;
 import static monaco.bot.marketdata.util.Constants.LIMIT;
+import static monaco.bot.marketdata.util.Constants.SIDE;
 import static monaco.bot.marketdata.util.Constants.START_TIME;
 import static monaco.bot.marketdata.util.Constants.SYMBOL;
 import static monaco.bot.marketdata.util.Constants.TIMESTAMP;
@@ -47,11 +54,11 @@ public class BingxFeatureClient implements MarketDataClient {
 
     private final RestTemplate restTemplate;
 
-    private final ObjectMapper objectMapper;
-
     private final EncryptDecryptGenerator encryptDecryptGenerator;
 
     private final AssetContractMapper assetContractMapper;
+
+    private static final String SYMBOL_LEVERAGE_PATH = "/openApi/swap/v2/trade/leverage";
 
     private static final String ASSET_PRICE_PATH = "/openApi/swap/v1/ticker/price";
 
@@ -62,9 +69,49 @@ public class BingxFeatureClient implements MarketDataClient {
     @Value("${exchange-url.bingx-perpetual}")
     private String url;
 
+    public LeverageSizeDto getSymbolLeverage(String symbol, UserExchangeInfo exchangeInfo) {
+        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
+        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+        String parametersString = this.getAssetParamsString(symbol, secretKey);
+        String requestUrl = this.getRequestUrl(SYMBOL_LEVERAGE_PATH, parametersString);
+        HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
+        HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
+        log.info("[TRADING BOT] Time: {} | Market-data-service | getSymbolLeverage" +
+                        " | asset's name : {} | action: {}",
+                Timestamp.from(Instant.now()), symbol, "get asset leverage size");
+        LeverageSizeDto data = Objects.requireNonNull(restTemplate.exchange(
+                requestUrl,
+                HttpMethod.GET,
+                entity,
+                SymbolLeverageResponseDto.class).getBody()).getData();
+        data.setSymbol(symbol);
+        data.setExchange(exchangeInfo.getExchange().getName());
+        return data;
+    }
+
+    public ChangeLeverageDto updateSymbolLeverage(String symbol, Long leverage,
+                                                  String side, UserExchangeInfo exchangeInfo) {
+        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
+        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+        String parametersString = this.getAssetParamsString(symbol, side, leverage, secretKey);
+        String requestUrl = this.getRequestUrl(SYMBOL_LEVERAGE_PATH, parametersString);
+        HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
+        HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
+        log.info("[TRADING BOT] Time: {} | Market-data-service | getSymbolLeverage" +
+                        " | asset's name : {} | action: {}",
+                Timestamp.from(Instant.now()), symbol, "get asset leverage size");
+        ChangeLeverageDto data = Objects.requireNonNull(restTemplate.exchange(
+                requestUrl,
+                HttpMethod.POST,
+                entity,
+                ChangeLeverageResponseDto.class).getBody()).getData();
+        data.setSymbol(symbol);
+        return data;
+    }
+
     @SneakyThrows
     @Override
-    public SingleAssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo) {
+    public AssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo) {
         String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
         String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
         String parametersString = this.getAssetParamsString(symbol, secretKey);
@@ -74,11 +121,11 @@ public class BingxFeatureClient implements MarketDataClient {
         log.info("[TRADING BOT] Time: {} | Market-data-service | get asset price" +
                         " | asset's name : {} | action: {}",
                 Timestamp.from(Instant.now()), symbol, "get asset price");
-        return restTemplate.exchange(
+        return Objects.requireNonNull(restTemplate.exchange(
                 requestUrl,
                 HttpMethod.GET,
                 entity,
-                SingleAssetPriceDto.class).getBody();
+                SingleAssetPriceDto.class).getBody()).getData();
     }
 
     @SneakyThrows
@@ -104,8 +151,8 @@ public class BingxFeatureClient implements MarketDataClient {
 
     @SneakyThrows
     @Override
-    public AssetPriceDataDto getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request,
-                                                        UserExchangeInfo exchangeInfo) {
+    public List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request,
+                                                           UserExchangeInfo exchangeInfo) {
         String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
         String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
         String parametersString = this.getAssetPriceCandlesParamsString(request, secretKey);
@@ -115,11 +162,17 @@ public class BingxFeatureClient implements MarketDataClient {
         log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
                         " | asset's params : {} | action: {}",
                 Timestamp.from(Instant.now()), request, "get period asset price candles");
-        return restTemplate.exchange(
-                requestUrl,
-                HttpMethod.GET,
-                entity,
-                AssetPriceDataDto.class).getBody();
+        AssetPriceDataDto data = restTemplate.exchange(requestUrl, HttpMethod.GET,
+                entity, AssetPriceDataDto.class).getBody();
+        return data.getData().stream()
+                .peek(asset -> {
+                    Double openPrice = asset.getOpen();
+                    Double closePrice = asset.getClose();
+                    asset.setVolume(asset.getVolume() * ((openPrice + closePrice)/2));
+                })
+                .peek(asset -> asset.setSymbol(request.getSymbol()))
+                .peek(asset -> asset.setExchange(exchangeInfo.getExchange().getName()))
+                .collect(Collectors.toList());
     }
 
     @SneakyThrows
@@ -131,6 +184,18 @@ public class BingxFeatureClient implements MarketDataClient {
         parameters.put(START_TIME, this.convertToMillisecs(request.getStartTime()) + "");
         parameters.put(END_TIME, this.convertToMillisecs(request.getEndTime()) + "");
         parameters.put(LIMIT, String.valueOf(request.getLimit()));
+        String valueToDigest = this.getMessageToDigest(parameters);
+        String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
+        return valueToDigest + "&signature=" + signature;
+    }
+
+    @SneakyThrows
+    private String getAssetParamsString(String symbol, String side, Long leverage, String secretKey) {
+        TreeMap<String, String> parameters = new TreeMap<>();
+        parameters.put(TIMESTAMP, "" + new Timestamp(System.currentTimeMillis()).getTime());
+        parameters.put(SYMBOL, symbol);
+        parameters.put(SIDE, side);
+        parameters.put(LEVERAGE, leverage.toString());
         String valueToDigest = this.getMessageToDigest(parameters);
         String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
         return valueToDigest + "&signature=" + signature;

@@ -7,6 +7,10 @@ public class Constants {
 
     public final static String SYMBOL = "symbol";
 
+    public final static String SIDE = "side";
+
+    public final static String LEVERAGE = "leverage";
+
     public final static String TIMESTAMP = "timestamp";
 
     public final static String BINGX_API_KEY_NAME = "X-BX-APIKEY";
@@ -18,5 +22,11 @@ public class Constants {
     public final static String END_TIME = "endTime";
 
     public final static String LIMIT = "limit";
+
+    public static String RECV_WINDOW = "recvWindow";
+
+    public static final String SIGNATURE = "signature";
+
+    public static final String BINANCE_API_KEY_NAME = "X-MBX-APIKEY";
 
 }

@@ -1,4 +1,4 @@
-package monaco.bot.marketdata.dto;
+package monaco.bot.marketdata.dto.binance.exchangeInfo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
@@ -6,19 +6,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AssetPriceDto {
+public class LeverageChangeResponseDto {
 
-    private String price;
+    private Long leverage;
+
+    private String maxNotionalValue;
 
     private String symbol;
-
-    private Timestamp time;
 
 }

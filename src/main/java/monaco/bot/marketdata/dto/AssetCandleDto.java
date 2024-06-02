@@ -27,4 +27,8 @@ public class AssetCandleDto {
 
     private Timestamp time;
 
+    private String symbol;
+
+    private String exchange;
+
 }

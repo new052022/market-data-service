@@ -14,7 +14,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
-    show-sql: false
+    show-sql: true
     liquibase:
       enabled: true
       drop-first: false
@@ -48,6 +48,8 @@ springdoc:
 
 exchange-url:
   bingx-perpetual: https://open-api.bingx.com
+  binance-perpetual:
+    v1: https://fapi.binance.com/fapi/v1
 
 secret-key: ${SECRET_NUMBER}
 
