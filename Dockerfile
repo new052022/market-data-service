@@ -1,7 +1,5 @@
 FROM openjdk:21-jdk
 
-ARG JAR_FILE=build/libs/*.jar
-
-COPY ${JAR_FILE} app.jar
+COPY /var/jenkins_home/workspace/monaco-market-service app.jar
 
 CMD ["java", "-jar", "app.jar"]
