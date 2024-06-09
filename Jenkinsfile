@@ -7,9 +7,10 @@ dockerImage = ''
 agent any
 stages {
 stage('Cloning our Git') {
-steps {
-git 'https://github.com/new052022/market-data-service.git'
-}
+ steps {
+        git branch: 'develop', // Specify develop branch
+           url: 'https://github.com/new052022/market-data-service.git'
+    }
 }
 stage('Building our image') {
 steps{
