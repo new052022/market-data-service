@@ -4,7 +4,12 @@ registry = "monacobot/market-data-service"
 registryCredential = 'monacobot'
 dockerImage = ''
 }
-agent any
+agent {
+  dockerfile {
+    filename 'Dockerfile'
+  }
+}
+
 stages {
 stage('Cloning our Git') {
  steps {
