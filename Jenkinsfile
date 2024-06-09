@@ -54,9 +54,6 @@ stage('Deploy our image') {
             def dbHost = env.DB_HOST
             def secretNumber = env.SECRET_NUMBER
             def algorithm = env.ALGORITHM
-            sh """
-                docker run -d -p 9001:9001 ${imageName}
-            """
           sh """
 docker run -d -p 9001:9001 -e POSTGRES_USER=${postgresUser} -e POSTGRES_PASS=${postgresPass} -e DB_HOST=${dbHost} -e SECRET_NUMBER=${secretNumber} -e ALGORITHM=${algorithm} ${imageName}
 """
