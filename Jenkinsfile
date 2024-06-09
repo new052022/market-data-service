@@ -2,6 +2,7 @@ pipeline {
 environment {
 registry = "monacobot/market-data-service"
 registryCredential = 'docker-id'
+dockerfile_postgres = 'postgres_id'
 dockerImage = ''
 }
 
