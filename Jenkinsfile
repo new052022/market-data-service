@@ -7,11 +7,6 @@ pipeline {
     }
     agent any
 
-    // Specify the branch to build from (replace with "master" if needed)
-    branches {
-        branch 'develop'
-    }
-
     stages {
         stage('Cloning from develop branch') {
             steps {
