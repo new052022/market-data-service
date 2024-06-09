@@ -5,9 +5,7 @@ registryCredential = 'monacobot'
 dockerImage = ''
 }
 agent {
-  dockerfile {
-    filename 'Dockerfile'
-  }
+    docker 'docker-agent'
 }
 
 stages {
