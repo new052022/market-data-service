@@ -50,7 +50,7 @@ stage('Deploy our image') {
            
             def imageName = registry + ":$BUILD_NUMBER"
             sh """
-                docker run -d -p 8080:8080 ${imageName}
+                docker run -d -p 9001:9001 ${imageName}
             """
         }
 }
