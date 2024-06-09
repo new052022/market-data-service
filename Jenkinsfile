@@ -38,7 +38,7 @@ stage('Pushing the image to Docker Hub') {
             steps {
                 script {
                     // Use docker.withRegistry with your registry credential ID
-                    docker.withRegistry('monacobot/market-data-service', registryCredential) {
+                    docker.withRegistry('hub.docker.com/r/monacobot/market-data-service', registryCredential) {
                         dockerImage.push()
                     }
                 }
