@@ -5,9 +5,10 @@ registryCredential = 'dockerhub-id'
 dockerImage = ''
 }
 agent {
-    cloud 'docker-agent', // Specify the cloud name
-    label 'docker-agent' // Specify the cloud label (must match Jenkins configuration)
-} 
+    docker {
+        image 'openjdk:21-jdk' // Optional: Specify the image for the Docker agent (if using a Docker agent)
+    }
+}
 
 stages {
 stage('Cloning our Git') {
