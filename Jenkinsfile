@@ -54,8 +54,10 @@ stage('Deploy our image') {
             def dbHost = env.DB_HOST
             def secretNumber = env.SECRET_NUMBER
             def algorithm = env.ALGORITHM
+          sh 'docker ps -f name=zookeeper -q | xargs --no-run-if-empty docker container stop'
+sh 'docker container ls -a -fname=zookeeper -q | xargs -r docker container rm'
           sh """
-docker run -d -p 9001:9001 -e POSTGRES_USER=${postgresUser} -e POSTGRES_PASS=${postgresPass} -e DB_HOST=${dbHost} -e SECRET_NUMBER=${secretNumber} -e ALGORITHM=${algorithm} ${imageName}
+docker run -d --name market-data-service -p 9001:9001 -e POSTGRES_USER=${postgresUser} -e POSTGRES_PASS=${postgresPass} -e DB_HOST=${dbHost} -e SECRET_NUMBER=${secretNumber} -e ALGORITHM=${algorithm} ${imageName}
 """
         }
 }
