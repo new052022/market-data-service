@@ -8,6 +8,7 @@ agent any
 stages {
 stage('Cloning our Git') {
 steps {
+  git branch: 'develop',
 git 'https://github.com/new052022/market-data-service.git'
 }
 }
