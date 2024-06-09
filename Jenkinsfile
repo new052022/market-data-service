@@ -31,6 +31,19 @@ script {
     def dockerHome = tool 'docker'
         env.PATH = "${dockerHome}/bin:${env.PATH}"
 dockerImage = docker.build registry + ":$BUILD_NUMBER"
+   def postgresUser = env.POSTGRES_USER
+            def postgresPass = env.POSTGRES_PASS
+            def dbHost = env.DB_HOST
+            def secretNumber = env.SECRET_NUMBER
+            def algorithm = env.ALGORITHM
+  sh """
+            docker build -t ${registry}:$BUILD_NUMBER \
+                --build-arg POSTGRES_USER=${postgresUser} \
+                --build-arg POSTGRES_PASS=${postgresPass} \
+                --build-arg DB_HOST=${dbHost} \
+                --build-arg SECRET_NUMBER=${secretNumber} \
+                --build-arg ALGORITHM=${algorithm} .
+            """
 }
 }
 }
