@@ -1,6 +1,6 @@
 pipeline {
 environment {
-registry = "hub.docker.com/r/monacobot/market-data-service"
+registry = "monacobot/market-data-service"
 registryCredential = 'docker-id'
 dockerImage = ''
 }
