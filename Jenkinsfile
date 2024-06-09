@@ -4,7 +4,7 @@ registry = "monacobot/market-data-service"
 registryCredential = 'monacobot'
 dockerImage = ''
 }
-agent { dockerfile true }
+agent { docker { image 'openjdk:21-jdk'} }
 
 stages {
 stage('Cloning our Git') {
