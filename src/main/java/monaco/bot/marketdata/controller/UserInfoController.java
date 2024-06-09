@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user-info")
-@Tag(name = "User-info controller")
+@Tag(name = "User controller")
 public class UserInfoController {
 
     private final UserInfoService userInfoService;
@@ -30,7 +30,7 @@ public class UserInfoController {
 
     @PostMapping
     @ApiResponse(responseCode = "201", description = "Api user was created")
-    @Operation(tags = "User-info controller", description = "Create api user")
+    @Operation(tags = "User controller", description = "Create api user")
     public ResponseEntity<UserInfoResponseDto> createApiUser(@RequestBody UserInfoRequestDto dto) {
         UserInfo newUser = userInfoMapper.toUserInfo(dto);
         UserInfo savedUser = userInfoService.save(newUser);
@@ -40,7 +40,7 @@ public class UserInfoController {
 
     @GetMapping("{id}")
     @ApiResponse(responseCode = "200", description = "Success")
-    @Operation(tags = "User-info controller", description = "Get api user information")
+    @Operation(tags = "User controller", description = "Get api user information")
     public ResponseEntity<UserInfoResponseDto> getUserInfo(@PathVariable Long id) {
         UserInfo user = userInfoService.getUser(id);
         UserInfoResponseDto response = userInfoMapper.toUserInfoResponseDto(user);
