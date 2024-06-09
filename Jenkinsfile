@@ -19,13 +19,11 @@ stage('Cloning our Git') {
            url: 'https://github.com/new052022/market-data-service.git'
     }
 }
-stage('Initialize'){
-        def dockerHome = tool 'docker'
-        env.PATH = "${dockerHome}/bin:${env.PATH}"
-    }
 stage('Building our image') {
 steps{
 script {
+    def dockerHome = tool 'docker'
+        env.PATH = "${dockerHome}/bin:${env.PATH}"
 dockerImage = docker.build registry + ":$BUILD_NUMBER"
 }
 }
