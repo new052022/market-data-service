@@ -1,29 +1,36 @@
 pipeline {
-    agent {
-  dockerfile {
-    filename 'Dockerfile'
-  }
+environment {
+registry = "monacobot/market-data-service"
+registryCredential = 'monacobot'
+dockerImage = ''
 }
-    stages {
-        stage('Build') {
-            steps {
-                sh 'gradle assemble'
-            }
-        }
-         stage('Test') {
-            steps {
-                sh 'gradle test'
-            }
-        }
-        stage('Build Docker Image') {
-            steps {
-                sh 'gradle docker'
-            }
-        }
-        stage('Run Docker Image') {
-            steps {
-                sh 'gradle dockerRun'
-            }
-        }
-    }
+agent any
+stages {
+stage('Cloning our Git') {
+steps {
+git 'https://github.com/new052022/market-data-service.git'
+}
+}
+stage('Building our image') {
+steps{
+script {
+dockerImage = docker.build registry + ":$BUILD_NUMBER"
+}
+}
+}
+stage('Deploy our image') {
+steps{
+script {
+docker.withRegistry( '', registryCredential ) {
+dockerImage.push()
+}
+}
+}
+}
+stage('Cleaning up') {
+steps{
+sh "docker rmi $registry:$BUILD_NUMBER"
+}
+}
+}
 }
