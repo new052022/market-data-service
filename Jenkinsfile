@@ -17,6 +17,14 @@ stage('Cloning our Git') {
            url: 'https://github.com/new052022/market-data-service.git'
     }
 }
+stage('Building the application') {
+      steps {
+        script {
+          // Execute Gradle command within the workspace
+          sh 'gradlew bootBuildImage'
+        }
+      }
+}
 stage('Building our image') {
 steps{
 script {
