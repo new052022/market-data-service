@@ -8,9 +8,7 @@ dockerImage = ''
 agent {
   label 'built-in'
 }
-
-stages {
-    
+stages {   
 stage('Cloning our Git') {
  steps {
         git branch: 'develop', // Specify develop branch
