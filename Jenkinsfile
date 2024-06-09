@@ -4,6 +4,7 @@ registry = "monacobot/market-data-service"
 registryCredential = 'dockerhub-id'
 dockerImage = ''
 }
+
 agent {
     docker {
         image 'openjdk:21-jdk' // Optional: Specify the image for the Docker agent (if using a Docker agent)
@@ -11,12 +12,17 @@ agent {
 }
 
 stages {
+    
 stage('Cloning our Git') {
  steps {
         git branch: 'develop', // Specify develop branch
            url: 'https://github.com/new052022/market-data-service.git'
     }
 }
+     stage('Initialize'){
+        def dockerHome = tool 'myDocker'
+        env.PATH = "${dockerHome}/bin:${env.PATH}"
+    }
 stage('Building our image') {
 steps{
 script {
