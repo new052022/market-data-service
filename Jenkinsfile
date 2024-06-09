@@ -6,9 +6,7 @@ dockerImage = ''
 }
 
 agent {
-    docker {
-        image 'openjdk:21-jdk' // Optional: Specify the image for the Docker agent (if using a Docker agent)
-    }
+  label 'built-in'
 }
 
 stages {
