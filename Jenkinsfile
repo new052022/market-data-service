@@ -1,7 +1,7 @@
 pipeline {
 environment {
 registry = "monacobot/market-data-service"
-registryCredential = 'monacobot'
+registryCredential = 'docker-id'
 dockerImage = ''
 }
 agent { docker { image 'openjdk:21-jdk'} }
