@@ -45,13 +45,14 @@ stage('Pushing the image to Docker Hub') {
             }
 }
 stage('Deploy our image') {
-steps{
-script {
-docker.withRegistry( '', registryCredential ) {
-dockerImage.push()
-}
-}
-}
+   steps {
+        script {
+           
+            def imageName = registry + ":$BUILD_NUMBER"
+            sh """
+                docker run -d -p 8080:8080 ${imageName}
+            """
+        }
 }
 stage('Cleaning up') {
 steps{
