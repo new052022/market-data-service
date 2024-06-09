@@ -21,7 +21,7 @@ stage('Building the application') {
       steps {
         script {
           // Execute Gradle command within the workspace
-          sh 'gradlew bootBuildImage'
+           sh './gradlew bootBuildImage'
         }
       }
 }
