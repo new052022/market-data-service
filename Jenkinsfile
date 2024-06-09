@@ -1,6 +1,6 @@
 pipeline {
 environment {
-registry = "https://hub.docker.com/r/monacobot/market-data-service"
+registry = "hub.docker.com/r/monacobot/market-data-service"
 registryCredential = 'docker-id'
 dockerImage = ''
 }
@@ -38,7 +38,7 @@ stage('Pushing the image to Docker Hub') {
             steps {
                 script {
                     // Use docker.withRegistry with your registry credential ID
-                    docker.withRegistry('https://hub.docker.com/r/monacobot/market-data-service', registryCredential) {
+                    docker.withRegistry('monacobot/market-data-service', registryCredential) {
                         dockerImage.push()
                     }
                 }
