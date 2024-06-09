@@ -1,6 +1,6 @@
 pipeline {
 environment {
-registry = "monacobot/market-data-service"
+registry = "85.190.243.240:8083/repository/monaco_data_service"
 registryCredential = 'docker-id'
 dockerImage = ''
 }
@@ -38,7 +38,7 @@ stage('Pushing the image to Docker Hub') {
             steps {
                 script {
                     // Use docker.withRegistry with your registry credential ID
-                    docker.withRegistry('https://hub.docker.com/repository/docker/monacobot/market-data-service', registryCredential) {
+                    docker.withRegistry('http://85.190.243.240:8083/repository/monaco_data_service/', registryCredential) {
                         dockerImage.push()
                     }
                 }
