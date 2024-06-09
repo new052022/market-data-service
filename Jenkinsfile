@@ -38,7 +38,7 @@ stage('Pushing the image to Docker Hub') {
             steps {
                 script {
                     // Use docker.withRegistry with your registry credential ID
-                    docker.withRegistry('https://hub.docker.com', registryCredential) {
+                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
                         dockerImage.push()
                     }
                 }
