@@ -20,7 +20,7 @@ dockerImage = docker.build registry + ":$BUILD_NUMBER"
 }
 }
 }
-  stage('Pushing the image to Docker Hub') {
+stage('Pushing the image to Docker Hub') {
             steps {
                 script {
                     // Use docker.withRegistry with your registry credential ID
@@ -29,6 +29,7 @@ dockerImage = docker.build registry + ":$BUILD_NUMBER"
                     }
                 }
             }
+}
 stage('Deploy our image') {
 steps{
 script {
