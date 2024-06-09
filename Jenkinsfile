@@ -4,7 +4,10 @@ registry = "monacobot/market-data-service"
 registryCredential = 'dockerhub-id'
 dockerImage = ''
 }
-agent { docker { image 'openjdk:21-jdk'} }
+agent {
+    cloud 'docker-agent' // Specify the cloud name
+    label 'docker-agent' // Specify the cloud label (must match the label defined in Jenkins)
+}
 
 stages {
 stage('Cloning our Git') {
