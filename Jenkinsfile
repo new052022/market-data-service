@@ -7,6 +7,9 @@ pipeline {
     agent {
         label 'built-in'
     }
+      tools {
+            docker 'docker'
+        }
     stages {
         stage('Cloning our Git') {
             steps {
