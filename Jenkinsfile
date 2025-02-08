@@ -28,7 +28,7 @@ pipeline {
         stage('Building our image') {
             steps {
                 script {
-                    def dockerHome = tool name: 'Docker', type: 'DockerTool' // Указание правильного типа для Docker
+                    def dockerHome = tool name: 'Docker', type: 'Tool' // Указание правильного типа для Docker
                     env.PATH = "${dockerHome}/bin:${env.PATH}"
                     dockerImage = docker.build registry + ":$BUILD_NUMBER"
                 }
