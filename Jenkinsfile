@@ -4,6 +4,9 @@ pipeline {
         registryCredential = '471126e4-7c00-4009-8f6c-851b452ca24d'
         dockerImage = ''
     }
+    tools {
+            jdk 'JDK 21'
+    }
     agent {
         label 'built-in'
     }
