@@ -58,6 +58,18 @@ pipeline {
                 }
             }
         }
+           stage('Clean old containers') {
+                    steps {
+                        script {
+                            sh '''
+                            docker ps -a | grep moritz007/market-data | awk '{print $1}' | xargs -r docker stop
+                            docker ps -a | grep moritz007/market-data | awk '{print $1}' | xargs -r docker rm
+
+                            docker images | grep moritz007/market-data | awk '{print $3}' | xargs -r docker rmi -f
+                            '''
+                        }
+                    }
+                }
         stage('Cleaning up') {
             steps {
                 sh "docker rmi $registry:$BUILD_NUMBER"
