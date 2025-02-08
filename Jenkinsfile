@@ -14,12 +14,12 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    # Останавливаем и удаляем ВСЕ контейнеры, использующие наш образ
-                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker stop
-                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rm
+                    echo "Stopping and removing old containers..."
+                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker stop || true
+                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rm -f || true
 
-                    # Теперь пробуем удалить сам образ
-                    docker images --filter reference=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rmi -f
+                    echo "Removing old images..."
+                    docker images --filter reference=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rmi -f || true
                     '''
                 }
             }
@@ -68,18 +68,18 @@ pipeline {
                         "ALGORITHM=${env.ALGORITHM}"
                     ]) {
                         sh '''
-                        # Остановка и удаление предыдущего контейнера
-                        docker ps -f name=market-data-service -q | xargs --no-run-if-empty docker stop
-                        docker ps -a -f name=market-data-service -q | xargs --no-run-if-empty docker rm
+                        echo "Stopping and removing previous container..."
+                        docker ps -f name=market-data-service -q | xargs --no-run-if-empty docker stop || true
+                        docker ps -a -f name=market-data-service -q | xargs --no-run-if-empty docker rm -f || true
 
-                        # Запуск нового контейнера
+                        echo "Deploying new container..."
                         docker run -d --name market-data-service -p 9001:9001 \
-                            -e POSTGRES_USER=$POSTGRES_USER \
-                            -e POSTGRES_PASS=$POSTGRES_PASS \
-                            -e DB_HOST=$DB_HOST \
-                            -e SECRET_NUMBER=$SECRET_NUMBER \
-                            -e ALGORITHM=$ALGORITHM \
-                            moritz007/market-data:${BUILD_NUMBER}
+                            -e POSTGRES_USER="$POSTGRES_USER" \
+                            -e POSTGRES_PASS="$POSTGRES_PASS" \
+                            -e DB_HOST="$DB_HOST" \
+                            -e SECRET_NUMBER="$SECRET_NUMBER" \
+                            -e ALGORITHM="$ALGORITHM" \
+                            ${registry}:${BUILD_NUMBER}
                         '''
                     }
                 }
@@ -90,8 +90,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    # Удаляем все старые версии образов
-                    docker images --filter reference=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rmi -f
+                    echo "Cleaning up old images..."
+                    docker images --filter reference=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rmi -f || true
                     '''
                 }
             }
