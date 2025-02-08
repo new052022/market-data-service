@@ -2,7 +2,6 @@ pipeline {
     environment {
         registry = "moritz007/market-data"
         registryCredential = 'docker-hub-credentials'
-        dockerImage = ''
     }
     tools {
         jdk 'JDK 21'
@@ -15,9 +14,9 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker ps -a | grep moritz007/market-data | awk '{print $1}' | xargs -r docker stop
-                    docker ps -a | grep moritz007/market-data | awk '{print $1}' | xargs -r docker rm
-                    docker images | grep moritz007/market-data | awk '{print $3}' | xargs -r docker rmi -f
+                    docker ps -a -q --filter "ancestor=moritz007/market-data" | xargs -r docker stop
+                    docker ps -a -q --filter "ancestor=moritz007/market-data" | xargs -r docker rm
+                    docker images -q "moritz007/market-data" | xargs -r docker rmi -f
                     '''
                 }
             }
@@ -58,32 +57,35 @@ pipeline {
         stage('Deploy our image') {
             steps {
                 script {
-                    def imageName = "${registry}:${BUILD_NUMBER}"
-                    def postgresUser = env.POSTGRES_USER
-                    def postgresPass = env.POSTGRES_PASS
-                    def dbHost = env.DB_HOST
-                    def secretNumber = env.SECRET_NUMBER
-                    def algorithm = env.ALGORITHM
+                    withEnv([
+                        "POSTGRES_USER=${env.POSTGRES_USER}",
+                        "POSTGRES_PASS=${env.POSTGRES_PASS}",
+                        "DB_HOST=${env.DB_HOST}",
+                        "SECRET_NUMBER=${env.SECRET_NUMBER}",
+                        "ALGORITHM=${env.ALGORITHM}"
+                    ]) {
+                        sh '''
+                        docker ps -f name=market-data-service -q | xargs --no-run-if-empty docker stop
+                        docker ps -a -f name=market-data-service -q | xargs --no-run-if-empty docker rm
 
-                    sh 'docker ps -f name=market-data-service -q | xargs --no-run-if-empty docker container stop'
-                    sh 'docker container ls -a -f name=market-data-service -q | xargs -r docker container rm'
-
-                    sh """
-                    docker run -d --name market-data-service -p 9001:9001 \
-                        -e POSTGRES_USER=${postgresUser} \
-                        -e POSTGRES_PASS=${postgresPass} \
-                        -e DB_HOST=${dbHost} \
-                        -e SECRET_NUMBER=${secretNumber} \
-                        -e ALGORITHM=${algorithm} \
-                        ${imageName}
-                    """
+                        docker run -d --name market-data-service -p 9001:9001 \
+                            -e POSTGRES_USER=$POSTGRES_USER \
+                            -e POSTGRES_PASS=$POSTGRES_PASS \
+                            -e DB_HOST=$DB_HOST \
+                            -e SECRET_NUMBER=$SECRET_NUMBER \
+                            -e ALGORITHM=$ALGORITHM \
+                            moritz007/market-data:${BUILD_NUMBER}
+                        '''
+                    }
                 }
             }
         }
 
         stage('Cleaning up') {
             steps {
-                sh "docker rmi $registry:$BUILD_NUMBER"
+                script {
+                    sh "docker rmi -f ${registry}:${BUILD_NUMBER}"
+                }
             }
         }
     }
