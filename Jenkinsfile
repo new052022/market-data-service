@@ -11,11 +11,24 @@ pipeline {
         label 'built-in'
     }
     stages {
-        stage('Cloning our Git') {
+        stage('Clean old containers') {
             steps {
-                git branch: 'develop', url: 'https://github.com/new052022/market-data-service.git' // Репозиторий
+                script {
+                    sh '''
+                    docker ps -a | grep moritz007/market-data | awk '{print $1}' | xargs -r docker stop
+                    docker ps -a | grep moritz007/market-data | awk '{print $1}' | xargs -r docker rm
+                    docker images | grep moritz007/market-data | awk '{print $3}' | xargs -r docker rmi -f
+                    '''
+                }
             }
         }
+
+        stage('Cloning our Git') {
+            steps {
+                git branch: 'develop', url: 'https://github.com/new052022/market-data-service.git'
+            }
+        }
+
         stage('Building the application') {
             steps {
                 script {
@@ -23,6 +36,7 @@ pipeline {
                 }
             }
         }
+
         stage('Building our image') {
             steps {
                 script {
@@ -30,6 +44,7 @@ pipeline {
                 }
             }
         }
+
         stage('Pushing the image to Docker Hub') {
             steps {
                 script {
@@ -39,6 +54,7 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy our image') {
             steps {
                 script {
@@ -50,26 +66,21 @@ pipeline {
                     def algorithm = env.ALGORITHM
 
                     sh 'docker ps -f name=market-data-service -q | xargs --no-run-if-empty docker container stop'
-                    sh 'docker container ls -a -fname=market-data-service -q | xargs -r docker container rm'
+                    sh 'docker container ls -a -f name=market-data-service -q | xargs -r docker container rm'
 
                     sh """
-                    docker run -d --name market-data-service -p 9001:9001 -e POSTGRES_USER=${postgresUser} -e POSTGRES_PASS=${postgresPass} -e DB_HOST=${dbHost} -e SECRET_NUMBER=${secretNumber} -e ALGORITHM=${algorithm} ${imageName}
+                    docker run -d --name market-data-service -p 9001:9001 \
+                        -e POSTGRES_USER=${postgresUser} \
+                        -e POSTGRES_PASS=${postgresPass} \
+                        -e DB_HOST=${dbHost} \
+                        -e SECRET_NUMBER=${secretNumber} \
+                        -e ALGORITHM=${algorithm} \
+                        ${imageName}
                     """
                 }
             }
         }
-           stage('Clean old containers') {
-                    steps {
-                        script {
-                            sh '''
-                            docker ps -a | grep moritz007/market-data | awk '{print $1}' | xargs -r docker stop
-                            docker ps -a | grep moritz007/market-data | awk '{print $1}' | xargs -r docker rm
 
-                            docker images | grep moritz007/market-data | awk '{print $3}' | xargs -r docker rmi -f
-                            '''
-                        }
-                    }
-                }
         stage('Cleaning up') {
             steps {
                 sh "docker rmi $registry:$BUILD_NUMBER"
