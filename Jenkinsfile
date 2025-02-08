@@ -35,7 +35,7 @@ pipeline {
             steps {
                 script {
                     // Use docker.withRegistry with your Nexus registry credentials
-                    docker.withRegistry('https://nexus.example.com', registryCredential) {
+                    docker.withRegistry('https://dailywish.pro/nexus_here/', registryCredential) {
                         dockerImage.push()
                     }
                 }
