@@ -7,9 +7,6 @@ pipeline {
     agent {
         label 'built-in'
     }
-      tools {
-            docker 'docker'
-        }
     stages {
         stage('Cloning our Git') {
             steps {
@@ -28,7 +25,7 @@ pipeline {
         stage('Building our image') {
             steps {
                 script {
-                    def dockerHome = tool 'docker'
+                    def dockerHome = tool name: 'Docker', type: 'DockerTool' // Указание правильного типа для Docker
                     env.PATH = "${dockerHome}/bin:${env.PATH}"
                     dockerImage = docker.build registry + ":$BUILD_NUMBER"
                 }
