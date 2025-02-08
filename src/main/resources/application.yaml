@@ -43,12 +43,8 @@ spring:
         event:
 
 springdoc:
-  api-docs:
-    path: /market-data/v3/api-docs
   swagger-ui:
-    path: /market-data/swagger-ui.html
-    config-url: /market-data/v3/api-docs/swagger-config
-    url: /market-data/v3/api-docs
+    path: /swagger-ui.html
 
 exchange-url:
   bingx-perpetual: https://open-api.bingx.com
