@@ -1,6 +1,6 @@
 pipeline {
     environment {
-        registry = "dailywish.pro/nexus_here/repository/market-data"
+        registry = "dailywish.pro/nexus_here/repository/market-data/"
         registryCredential = '471126e4-7c00-4009-8f6c-851b452ca24d'
         dockerImage = ''
     }
