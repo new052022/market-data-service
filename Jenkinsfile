@@ -2,7 +2,6 @@ pipeline {
     environment {
         registry = "moritz007/market-data"
         registryCredential = 'docker-hub-credentials'
-        dockerImage = ''
     }
     tools {
         jdk 'JDK 21'
@@ -15,9 +14,12 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs -r docker stop
-                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs -r docker rm
-                    docker images --filter reference=moritz007/market-data --format "{{.ID}}" | xargs -r docker rmi -f
+                    # Останавливаем и удаляем ВСЕ контейнеры, использующие наш образ
+                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker stop
+                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rm
+
+                    # Теперь пробуем удалить сам образ
+                    docker images --filter reference=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rmi -f
                     '''
                 }
             }
@@ -58,17 +60,28 @@ pipeline {
         stage('Deploy our image') {
             steps {
                 script {
-                    sh '''
-                    docker ps -f name=market-data-service -q | xargs -r docker stop
-                    docker ps -a -f name=market-data-service -q | xargs -r docker rm
-                    docker run -d --name market-data-service -p 9001:9001 \
-                        -e POSTGRES_USER=$POSTGRES_USER \
-                        -e POSTGRES_PASS=$POSTGRES_PASS \
-                        -e DB_HOST=$DB_HOST \
-                        -e SECRET_NUMBER=$SECRET_NUMBER \
-                        -e ALGORITHM=$ALGORITHM \
-                        moritz007/market-data:$BUILD_NUMBER
-                    '''
+                    withEnv([
+                        "POSTGRES_USER=${env.POSTGRES_USER}",
+                        "POSTGRES_PASS=${env.POSTGRES_PASS}",
+                        "DB_HOST=${env.DB_HOST}",
+                        "SECRET_NUMBER=${env.SECRET_NUMBER}",
+                        "ALGORITHM=${env.ALGORITHM}"
+                    ]) {
+                        sh '''
+                        # Остановка и удаление предыдущего контейнера
+                        docker ps -f name=market-data-service -q | xargs --no-run-if-empty docker stop
+                        docker ps -a -f name=market-data-service -q | xargs --no-run-if-empty docker rm
+
+                        # Запуск нового контейнера
+                        docker run -d --name market-data-service -p 9001:9001 \
+                            -e POSTGRES_USER=$POSTGRES_USER \
+                            -e POSTGRES_PASS=$POSTGRES_PASS \
+                            -e DB_HOST=$DB_HOST \
+                            -e SECRET_NUMBER=$SECRET_NUMBER \
+                            -e ALGORITHM=$ALGORITHM \
+                            moritz007/market-data:${BUILD_NUMBER}
+                        '''
+                    }
                 }
             }
         }
@@ -77,9 +90,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs -r docker stop
-                    docker ps -a --filter ancestor=moritz007/market-data --format "{{.ID}}" | xargs -r docker rm
-                    docker images --filter reference=moritz007/market-data --format "{{.ID}}" | xargs -r docker rmi -f
+                    # Удаляем все старые версии образов
+                    docker images --filter reference=moritz007/market-data --format "{{.ID}}" | xargs --no-run-if-empty docker rmi -f
                     '''
                 }
             }
