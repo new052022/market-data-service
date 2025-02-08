@@ -1,11 +1,11 @@
 pipeline {
     environment {
-        registry = "dailywish.pro/nexus_here/repository/market-data/"
-        registryCredential = '471126e4-7c00-4009-8f6c-851b452ca24d'
+        registry = "moritz007/market-data"
+        registryCredential = 'docker-hub-credentials'
         dockerImage = ''
     }
     tools {
-            jdk 'JDK 21'
+        jdk 'JDK 21'
     }
     agent {
         label 'built-in'
@@ -13,30 +13,27 @@ pipeline {
     stages {
         stage('Cloning our Git') {
             steps {
-                git branch: 'develop', // Specify develop branch
-                   url: 'https://github.com/new052022/market-data-service.git'
+                git branch: 'develop', url: 'https://github.com/new052022/market-data-service.git' // Репозиторий
             }
         }
         stage('Building the application') {
             steps {
                 script {
-                    // Execute Gradle command within the workspace
                     sh './gradlew bootBuildImage'
                 }
             }
         }
         stage('Building our image') {
-                  steps {
-                      script {
-                      dockerImage = docker.build("${registry}market-data-service:${BUILD_NUMBER}")
-                      }
-                  }
-        }
-        stage('Pushing the image to Nexus') {
             steps {
                 script {
-                    // Use docker.withRegistry with your Nexus registry credentials
-                    docker.withRegistry('https://dailywish.pro/nexus_here/', registryCredential) {
+                    dockerImage = docker.build("${registry}:${BUILD_NUMBER}")
+                }
+            }
+        }
+        stage('Pushing the image to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', registryCredential) {
                         dockerImage.push()
                     }
                 }
@@ -45,7 +42,7 @@ pipeline {
         stage('Deploy our image') {
             steps {
                 script {
-                    def imageName = registry + ":$BUILD_NUMBER"
+                    def imageName = "${registry}:${BUILD_NUMBER}"
                     def postgresUser = env.POSTGRES_USER
                     def postgresPass = env.POSTGRES_PASS
                     def dbHost = env.DB_HOST
