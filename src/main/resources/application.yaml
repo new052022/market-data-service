@@ -42,14 +42,14 @@ spring:
       topics:
         event:
 
-#springdoc:
-#  api-docs:
-#    path: /market-data/v3/api-docs
-#  swagger-ui:
-#    path: /market-data/swagger-ui.html
-#    config-url: /market-data/v3/api-docs/swagger-config
-#    url: /market-data/v3/api-docs
-#    oauth2-redirect-url: https://dailywish.pro/market-data/swagger-ui/oauth2-redirect.html
+springdoc:
+  api-docs:
+    path: /market-data/v3/api-docs
+  swagger-ui:
+    path: /market-data/swagger-ui.html
+    config-url: /market-data/v3/api-docs/swagger-config
+    url: /market-data/v3/api-docs
+    oauth2-redirect-url: https://dailywish.pro/market-data/swagger-ui/oauth2-redirect.html
 
 exchange-url:
   bingx-perpetual: https://open-api.bingx.com
