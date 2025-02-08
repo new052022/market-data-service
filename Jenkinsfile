@@ -6,7 +6,6 @@ pipeline {
     }
     tools {
             jdk 'JDK 21'
-            docker 'Docker'
     }
     agent {
         label 'built-in'
