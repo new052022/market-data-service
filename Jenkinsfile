@@ -75,7 +75,9 @@ pipeline {
                         docker ps -a -f name=market-data-service -q | xargs --no-run-if-empty docker rm -f || true
 
                         echo "Deploying new container..."
-                        docker run -d --name market-data-service -p 9001:9001 \
+                        docker run -d --name market-data-service \
+                            --network moritz-network \
+                            -p 9001:9001 \
                             -e POSTGRES_USER="$POSTGRES_USER" \
                             -e POSTGRES_PASS="$POSTGRES_PASS" \
                             -e DB_HOST="$DB_HOST" \
