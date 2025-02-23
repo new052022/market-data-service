@@ -66,6 +66,8 @@ pipeline {
                         "DB_HOST=${env.DB_HOST}",
                         "SECRET_NUMBER=${env.SECRET_NUMBER}",
                         "ALGORITHM=${env.ALGORITHM}"
+                        "USERS_URL=${env.USERS_URL}"
+                        "USER_EXCHANGE=${env.USER_EXCHANGE}"
                     ]) {
                         sh '''
                         echo "Stopping and removing previous container..."
@@ -79,6 +81,8 @@ pipeline {
                             -e DB_HOST="$DB_HOST" \
                             -e SECRET_NUMBER="$SECRET_NUMBER" \
                             -e ALGORITHM="$ALGORITHM" \
+                            -e USERS_URL="USERS_URL" \
+                            -e USER_EXCHANGE="USER_EXCHANGE" \
                             ${registry}:${BUILD_NUMBER}
                         '''
                     }
