@@ -43,7 +43,7 @@ spring:
         event:
 
 users-service:
-  url: ${USERS_URL}
+  url: http://${USERS_URL}
   user-exchange-endpoint: ${USER_EXCHANGE}
 
 springdoc:
