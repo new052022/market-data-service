@@ -3,19 +3,12 @@ package monaco.bot.marketdata.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
-import monaco.bot.marketdata.dto.AssetCandleDto;
-import monaco.bot.marketdata.dto.ExchangeSymbolsRequestDto;
-import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
-import monaco.bot.marketdata.dto.SymbolParamsDto;
-import monaco.bot.marketdata.dto.SymbolRequestDto;
-import monaco.bot.marketdata.dto.SymbolResponseDto;
+import monaco.bot.marketdata.dto.*;
+import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
-import monaco.bot.marketdata.model.UserExchangeInfo;
 import monaco.bot.marketdata.model.UserSymbolLeverage;
 import monaco.bot.marketdata.repository.AssetContractRepository;
 import monaco.bot.marketdata.service.interfaces.AssetContractService;
-import monaco.bot.marketdata.service.interfaces.UserExchangeInfoService;
-import monaco.bot.marketdata.service.interfaces.UserInfoService;
 import monaco.bot.marketdata.service.interfaces.UserSymbolLeverageService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -42,13 +35,13 @@ public class AssetContractServiceImpl implements AssetContractService {
 
     private final AssetContractRepository assetContractRepository;
 
-    private final UserExchangeInfoService exchangeService;
-
     private final Map<String, MarketDataClient> marketDataClients;
 
     private final UserSymbolLeverageService userSymbolLeverageService;
 
-    private final UserInfoService userInfoService;
+    private final UsersService usersService;
+
+    private final AssetContractMapper assetContractMapper;
 
     public List<AssetContract> saveAll(List<AssetContract> assetContracts) {
         for (AssetContract assetContract : assetContracts) {
@@ -60,16 +53,17 @@ public class AssetContractServiceImpl implements AssetContractService {
     }
 
     @Override
-    public List<AssetContract> getByExchange(String name) {
-        return assetContractRepository.getAssetContractsByExchangeName(name);
+    public List<AssetContractResponseDto> getByExchange(String name) {
+        List<AssetContract> assetsDetails = assetContractRepository.getAssetContractsByExchangeName(name);
+        return assetContractMapper.getAssetContractDtoList(assetsDetails);
     }
 
     @Override
-    public SymbolResponseDto getSymbolsByParams(SymbolRequestDto requestDto) {
-        Map<String, UserExchangeInfo> exchangeMap = userInfoService.getUser(requestDto.getUserId()).getExchanges()
+    public SymbolResponseDto  getSymbolsByParams(SymbolRequestDto requestDto) {
+        Map<String, UserExchangeResponseDto> exchangeMap = usersService.getUsersExchanges(requestDto.getUserId())
                 .stream()
-                .filter(exchangeInfo -> requestDto.getExchanges().contains(exchangeInfo.getExchange().getName()))
-                .collect(Collectors.toMap(exchangeInfo -> exchangeInfo.getExchange().getName(), exchange -> exchange));
+                .filter(exchangeInfo -> requestDto.getExchanges().contains(exchangeInfo.getExchangeName()))
+                .collect(Collectors.toMap(UserExchangeResponseDto::getExchangeName, exchange -> exchange));
         List<UserSymbolLeverage> symbolLeverages = userSymbolLeverageService.getSymbolsByUserIdAndLeverage(
                 requestDto.getUserId(), requestDto.getLeverage(), requestDto.getExchanges());
         Map<String, List<AssetContract>> assets = assetContractRepository.getAssetContractsByExchangeNameIn(
@@ -78,6 +72,7 @@ public class AssetContractServiceImpl implements AssetContractService {
         Map<String, List<AssetCandleDto>> exchangeCandles = symbolLeverages.stream()
                 .map(symbol -> {
                     MarketDataClient client = marketDataClients.get(symbol.getExchange().getName());
+                    UserExchangeResponseDto userExchange = exchangeMap.get(symbol.getExchange().getName());
                     return client.getPeriodAssetPriceCandles(
                             PeriodAssetPriceCandlesRequest.builder()
                                     .symbol(symbol.getSymbol())
@@ -85,7 +80,7 @@ public class AssetContractServiceImpl implements AssetContractService {
                                     .interval(requestDto.getInterval())
                                     .endTime(requestDto.getEndTime())
                                     .startTime(requestDto.getStartTime())
-                                    .build(), exchangeMap.get(symbol.getExchange().getName()));
+                                    .build(), userExchange.getApiKey(), userExchange.getSecretKey(), userExchange.getExchangeName());
                 })
                 .flatMap(Collection::stream)
                 .collect(groupingBy(AssetCandleDto::getExchange));
@@ -123,11 +118,12 @@ public class AssetContractServiceImpl implements AssetContractService {
         assetContractRepository.deleteAll();
         List<AssetContract> assetsToSave = new ArrayList<>();
         try {
-            Map<String, UserExchangeInfo> exchanges = exchangeService.findById(1L).stream()
-                    .collect(Collectors.toMap(exchange -> exchange.getExchange().getName(), Function.identity()));
-            for (UserExchangeInfo exchange : exchanges.values()) {
-                MarketDataClient client = marketDataClients.get(exchange.getExchange().getName());
-                List<AssetContract> assetDetails = client.getAssetDetails(exchange);
+            Map<String, UserExchangeResponseDto> exchanges = usersService.getUsersExchanges(1L).stream()
+                    .collect(Collectors.toMap(UserExchangeResponseDto::getExchangeName, Function.identity()));
+            for (UserExchangeResponseDto exchange : exchanges.values()) {
+                MarketDataClient client = marketDataClients.get(exchange.getExchangeName());
+                List<AssetContract> assetDetails = client.getAssetDetails(
+                        exchange.getApiKey(), exchange.getSecretKey(),exchange.getExchangeName());
                 assetsToSave.addAll(assetDetails);
             }
         } catch (Exception exception) {

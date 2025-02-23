@@ -1,5 +1,6 @@
 package monaco.bot.marketdata.client.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +13,10 @@ import monaco.bot.marketdata.dto.ChangeLeverageDto;
 import monaco.bot.marketdata.dto.ChangeLeverageResponseDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
-import monaco.bot.marketdata.dto.SingleAssetPriceDto;
 import monaco.bot.marketdata.dto.SymbolLeverageResponseDto;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
-import monaco.bot.marketdata.model.UserExchangeInfo;
+import monaco.bot.marketdata.service.interfaces.ExchangeService;
 import monaco.bot.marketdata.util.EncryptDecryptGenerator;
 import monaco.bot.marketdata.util.SignatureGenerator;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,6 +58,10 @@ public class BingxFeatureClient implements MarketDataClient {
 
     private final AssetContractMapper assetContractMapper;
 
+    private final ExchangeService exchangeService;
+
+    private final ObjectMapper objectMapper;
+
     private static final String SYMBOL_LEVERAGE_PATH = "/openApi/swap/v2/trade/leverage";
 
     private static final String ASSET_PRICE_PATH = "/openApi/swap/v1/ticker/price";
@@ -69,9 +73,10 @@ public class BingxFeatureClient implements MarketDataClient {
     @Value("${exchange-url.bingx-perpetual}")
     private String url;
 
-    public LeverageSizeDto getSymbolLeverage(String symbol, UserExchangeInfo exchangeInfo) {
-        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
-        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+    @Override
+    public LeverageSizeDto getSymbolLeverage(String symbol, String encodedApiKey, String encodedSecretKey, String exchange) {
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
         String parametersString = this.getAssetParamsString(symbol, secretKey);
         String requestUrl = this.getRequestUrl(SYMBOL_LEVERAGE_PATH, parametersString);
         HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
@@ -85,14 +90,15 @@ public class BingxFeatureClient implements MarketDataClient {
                 entity,
                 SymbolLeverageResponseDto.class).getBody()).getData();
         data.setSymbol(symbol);
-        data.setExchange(exchangeInfo.getExchange().getName());
+        data.setExchange(exchange);
         return data;
     }
 
+    @Override
     public ChangeLeverageDto updateSymbolLeverage(String symbol, Long leverage,
-                                                  String side, UserExchangeInfo exchangeInfo) {
-        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
-        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+                                                  String side, String encodedApiKey, String encodedSecretKey) {
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
         String parametersString = this.getAssetParamsString(symbol, side, leverage, secretKey);
         String requestUrl = this.getRequestUrl(SYMBOL_LEVERAGE_PATH, parametersString);
         HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
@@ -110,29 +116,31 @@ public class BingxFeatureClient implements MarketDataClient {
     }
 
     @SneakyThrows
-    @Override
-    public AssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo) {
-        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
-        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
-        String parametersString = this.getAssetParamsString(symbol, secretKey);
+    public List<AssetPriceDto> getAssetsPrices(String encodedApiKey, String encodedSecretKey) {
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
+        String parametersString = this.getAssetParamsString("",secretKey);
         String requestUrl = this.getRequestUrl(ASSET_PRICE_PATH, parametersString);
         HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
         HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
-        log.info("[TRADING BOT] Time: {} | Market-data-service | get asset price" +
-                        " | asset's name : {} | action: {}",
-                Timestamp.from(Instant.now()), symbol, "get asset price");
-        return Objects.requireNonNull(restTemplate.exchange(
+        String response = Objects.requireNonNull(restTemplate.exchange(
                 requestUrl,
                 HttpMethod.GET,
                 entity,
-                SingleAssetPriceDto.class).getBody()).getData();
+                String.class).getBody());
+        List<AssetPriceDto> assetPrices = objectMapper.readValue(response,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, AssetPriceDto.class));
+        log.info("[TRADING BOT] Time: {} | Market-data-service | get asset price" +
+                        " | asset's name : {} | action: {}",
+                Timestamp.from(Instant.now()),assetPrices, "get asset price");
+        return assetPrices;
     }
 
     @SneakyThrows
     @Override
-    public List<AssetContract> getAssetDetails(UserExchangeInfo exchangeInfo) {
-        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
-        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+    public List<AssetContract> getAssetDetails(String encodedApiKey,String encodedSecretKey, String exchange) {
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
         String parametersString = this.getAssetParamsString("", secretKey);
         String requestUrl = this.getRequestUrl(ASSET_DETAILS_PATH, parametersString);
         HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
@@ -146,15 +154,15 @@ public class BingxFeatureClient implements MarketDataClient {
                 entity,
                 AssetContractDataDto.class).getBody();
         return assetContractMapper.fromAssetDetailsDtoListToAssetContractList(
-                data.getData(), exchangeInfo.getExchange());
+                data.getData(), exchangeService.getExchangeByName(exchange));
     }
 
     @SneakyThrows
     @Override
     public List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request,
-                                                           UserExchangeInfo exchangeInfo) {
-        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
-        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+                                                           String encodedApiKey, String encodedSecretKey, String exchange) {
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
         String parametersString = this.getAssetPriceCandlesParamsString(request, secretKey);
         String requestUrl = this.getRequestUrl(CANDLE_ASSET_PRICE_PATH, parametersString);
         HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
@@ -171,7 +179,7 @@ public class BingxFeatureClient implements MarketDataClient {
                     asset.setVolume(asset.getVolume() * ((openPrice + closePrice)/2));
                 })
                 .peek(asset -> asset.setSymbol(request.getSymbol()))
-                .peek(asset -> asset.setExchange(exchangeInfo.getExchange().getName()))
+                .peek(asset -> asset.setExchange(exchange))
                 .collect(Collectors.toList());
     }
 
@@ -202,7 +210,7 @@ public class BingxFeatureClient implements MarketDataClient {
     }
 
     @SneakyThrows
-    private String getAssetParamsString(String symbol, String secretKey) {
+    private String getAssetParamsString(String symbol,String secretKey) {
         TreeMap<String, String> parameters = new TreeMap<>();
         parameters.put(TIMESTAMP, "" + new Timestamp(System.currentTimeMillis()).getTime());
         parameters.put(SYMBOL, symbol);

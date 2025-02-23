@@ -42,6 +42,10 @@ spring:
       topics:
         event:
 
+users-service:
+  url: ${USERS_URL}
+  user-exchange-endpoint: ${USER_EXCHANGE}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

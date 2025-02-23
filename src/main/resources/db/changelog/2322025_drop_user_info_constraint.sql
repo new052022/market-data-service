@@ -1,0 +1,2 @@
+alter table user_symbol_leverage
+drop constraint fk_user_symbol_leverage_user_info_id;

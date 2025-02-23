@@ -17,3 +17,9 @@ databaseChangeLog:
       file: db/changelog/db.alter_table_filter_type.sql
   - include:
       file: db/changelog/db.create_user_symbol_leverage_table.sql
+  - include:
+      file: db/changelog/2322025_drop_user_info_constraint.sql
+  - include:
+      file: db/changelog/2322025_drop_user_exchange_info.sql
+  - include:
+      file: db/changelog/2322025_drop_table_user_info.sql

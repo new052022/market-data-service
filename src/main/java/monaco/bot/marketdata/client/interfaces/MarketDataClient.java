@@ -6,22 +6,21 @@ import monaco.bot.marketdata.dto.ChangeLeverageDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.model.AssetContract;
-import monaco.bot.marketdata.model.UserExchangeInfo;
 
 import java.util.List;
 
 public interface MarketDataClient {
 
-    AssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo);
+    List<AssetPriceDto> getAssetsPrices(String apiKey, String secretKey);
 
     List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request,
-                                                    UserExchangeInfo exchangeInfo);
+                                                    String apiKey, String secretKey, String exchange);
 
-    List<AssetContract> getAssetDetails(UserExchangeInfo exchangeInfo);
+    List<AssetContract> getAssetDetails(String apiKey,String secretKey, String exchange);
 
-    LeverageSizeDto getSymbolLeverage(String symbol, UserExchangeInfo exchangeInfo);
+    LeverageSizeDto getSymbolLeverage(String symbol, String apiKey, String secretKey, String exchange);
 
     ChangeLeverageDto updateSymbolLeverage(String symbol, Long leverage,
-                                           String side, UserExchangeInfo exchangeInfo);
+                                           String side, String apiKey, String secretKey);
 
 }

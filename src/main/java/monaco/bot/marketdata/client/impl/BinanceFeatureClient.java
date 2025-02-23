@@ -17,7 +17,7 @@ import monaco.bot.marketdata.dto.binance.exchangeInfo.LeverageChangeResponseDto;
 import monaco.bot.marketdata.mapper.AssetCandleConverter;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
-import monaco.bot.marketdata.model.UserExchangeInfo;
+import monaco.bot.marketdata.service.interfaces.ExchangeService;
 import monaco.bot.marketdata.util.EncryptDecryptGenerator;
 import monaco.bot.marketdata.util.SignatureGenerator;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,6 +59,8 @@ public class BinanceFeatureClient implements MarketDataClient {
 
     private final EncryptDecryptGenerator encryptDecryptGenerator;
 
+    private final ExchangeService exchangeService;
+
     @Value("${exchange-url.binance-perpetual.v1}")
     private String url;
 
@@ -73,20 +75,23 @@ public class BinanceFeatureClient implements MarketDataClient {
     public static final String LEVERAGE_PATH = "/leverage";
 
     @Override
-    public AssetPriceDto getAssetPrice(String symbol, UserExchangeInfo exchangeInfo) {
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url + PRICE_PATH)
-                .queryParam(SYMBOL, symbol);
-        AssetPriceDto price = restTemplate.exchange(
-                uriBuilder.toUriString(), HttpMethod.GET, null, AssetPriceDto.class).getBody();
+    @SneakyThrows
+    public List<AssetPriceDto> getAssetsPrices(String apiKey, String secretKey) {
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url + PRICE_PATH);
+       String response = restTemplate.exchange(
+                uriBuilder.toUriString(), HttpMethod.GET, null, String.class).getBody();
+        List<AssetPriceDto> assetPrices = objectMapper.readValue(response,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, AssetPriceDto.class));
         log.info("[TRADING BOT] Time: {} | Market-data-service | getAssetPrice" +
-                        " |  Price: {} | action: {}",
-                Timestamp.from(Instant.now()), Objects.requireNonNull(price).getPrice(), "fetch price");
-        return price;
+                        " |  Prices: {} | action: {}",
+                Timestamp.from(Instant.now()), Objects.requireNonNull(assetPrices), "fetch price");
+        return assetPrices;
     }
 
     @SneakyThrows
     @Override
-    public List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request, UserExchangeInfo exchangeInfo) {
+    public List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request, String apiKey,
+                                                           String secretKey, String exchange) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url + ASSET_CANDLE_PRICE_PATH)
                 .queryParam(SYMBOL, request.getSymbol())
                 .queryParam(INTERVAL, request.getInterval())
@@ -105,13 +110,13 @@ public class BinanceFeatureClient implements MarketDataClient {
         return data.stream()
                 .map(candleConverter::convertToAssetCandleDto)
                 .peek(asset -> asset.setSymbol(request.getSymbol()))
-                .peek(asset -> asset.setExchange(exchangeInfo.getExchange().getName()))
+                .peek(asset -> asset.setExchange(exchange))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AssetContract> getAssetDetails(UserExchangeInfo exchangeInfo) {
-        Map<String, LeverageDto> leverageMap = this.getLeverages(exchangeInfo).stream()
+        public List<AssetContract> getAssetDetails(String apiKey, String secretKey, String exchange) {
+        Map<String, LeverageDto> leverageMap = this.getLeverages(apiKey,secretKey).stream()
                 .collect(Collectors.toMap(LeverageDto::getSymbol, Function.identity()));
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url + EXCHANGE_INFO);
         return Objects.requireNonNull(restTemplate.exchange(
@@ -120,13 +125,13 @@ public class BinanceFeatureClient implements MarketDataClient {
                         null,
                         AssetInfoDto.class).getBody()).getSymbols().stream()
                 .map(symbol -> assetContractMapper.toAssetCandleDto(symbol, leverageMap.get(symbol.getSymbol()),
-                        exchangeInfo.getExchange()))
+                        exchangeService.getExchangeByName(exchange)))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public LeverageSizeDto getSymbolLeverage(String symbol, UserExchangeInfo exchangeInfo) {
-        List<LeverageDto> leverages = this.getLeverages(exchangeInfo);
+    public LeverageSizeDto getSymbolLeverage(String symbol, String apiKey, String secretKey, String exchange) {
+        List<LeverageDto> leverages = this.getLeverages(apiKey, secretKey);
         Optional<LeverageDto> leverageResponse = leverages.stream()
                 .filter(leverage -> leverage.getSymbol().equalsIgnoreCase(symbol))
                 .findFirst();
@@ -142,17 +147,17 @@ public class BinanceFeatureClient implements MarketDataClient {
                     .maxShortLeverage(leverage)
                     .longLeverage(leverage)
                     .shortLeverage(leverage)
-                    .exchange(exchangeInfo.getExchange().getName())
+                    .exchange(exchange)
                     .build();
         }
     }
 
     @Override
-    public ChangeLeverageDto updateSymbolLeverage(String symbol, Long leverage, String side, UserExchangeInfo exchangeInfo) {
+    public ChangeLeverageDto updateSymbolLeverage(String symbol, Long leverage, String side, String encodedApiKey, String encodedSecretKey) {
         String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
         String recvWindows = "15000";
-        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
-        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
         String params = this.getAssetsUpdateString(secretKey, time, recvWindows, symbol, leverage);
         String requestUrl = this.getRequestUrl(LEVERAGE_PATH, params);
         HttpHeaders headers = this.addHttpHeaders(BINANCE_API_KEY_NAME, apiKey);
@@ -166,11 +171,11 @@ public class BinanceFeatureClient implements MarketDataClient {
     }
 
     @SneakyThrows
-    public List<LeverageDto> getLeverages(UserExchangeInfo exchangeInfo) {
+    public List<LeverageDto> getLeverages(String encodedApiKey, String encodedSecretKey) {
         String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
         String recvWindows = "15000";
-        String secretKey = encryptDecryptGenerator.decryptData(exchangeInfo.getSecretKey());
-        String apiKey = encryptDecryptGenerator.decryptData(exchangeInfo.getApiKey());
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
         String params = this.getAssetsLeverageString(secretKey, time, recvWindows);
         String requestUrl = this.getRequestUrl(LEVERAGE_BRACKET, params);
         HttpHeaders headers = this.addHttpHeaders(BINANCE_API_KEY_NAME, apiKey);

@@ -7,8 +7,6 @@ import monaco.bot.marketdata.model.UserSymbolLeverage;
 import monaco.bot.marketdata.repository.UserSymbolLeverageRepository;
 import monaco.bot.marketdata.service.interfaces.AssetContractService;
 import monaco.bot.marketdata.service.interfaces.ExchangeService;
-import monaco.bot.marketdata.service.interfaces.UserExchangeInfoService;
-import monaco.bot.marketdata.service.interfaces.UserInfoService;
 import monaco.bot.marketdata.service.interfaces.UserSymbolLeverageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -27,13 +25,9 @@ public class UserSymbolLeverageServiceImpl implements UserSymbolLeverageService 
 
     private final UserSymbolLeverageRepository userSymbolLeverageRepository;
 
-    private final UserExchangeInfoService userExchangeInfoService;
+    private final ExchangesIntegrationService exchangesIntegrationService;
 
     private AssetContractService assetContractService;
-
-    private final UserInfoService userInfoService;
-
-    private final Map<String, MarketDataClient> featureClients;
 
     private final ExchangeService exchangeService;
 
@@ -65,8 +59,7 @@ public class UserSymbolLeverageServiceImpl implements UserSymbolLeverageService 
                 .flatMap(exchange -> {
                     List<AssetContract> assetContracts = exchangeAssetMap.get(exchange);
                     return assetContracts.stream()
-                            .map(asset -> featureClients.get(exchange).getSymbolLeverage(asset.getSymbol(),
-                                    userExchangeInfoService.getExchangeInfoByNameAndUserId(userId, exchange)));
+                            .map(asset -> exchangesIntegrationService.getSymbolLeverage(userId, exchange, asset.getSymbol()));
                 })
                 .map(leverageSize -> UserSymbolLeverage.builder()
                         .symbol(leverageSize.getSymbol())
@@ -75,7 +68,7 @@ public class UserSymbolLeverageServiceImpl implements UserSymbolLeverageService 
                         .longLeverage(leverageSize.getLongLeverage() != null ? leverageSize.getLongLeverage() :
                                 leverageSize.getMaxLongLeverage())
                         .exchange(exchangeService.getExchangeByName(leverageSize.getExchange()))
-                        .userInfo(userInfoService.getUser(userId))
+                        .userId(userId)
                         .build())
                 .collect(Collectors.toList());
     }

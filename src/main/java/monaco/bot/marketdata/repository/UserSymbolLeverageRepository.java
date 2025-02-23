@@ -10,7 +10,7 @@ import java.util.List;
 public interface UserSymbolLeverageRepository extends JpaRepository<UserSymbolLeverage, Long>  {
 
     @Query("SELECT usl FROM UserSymbolLeverage usl " +
-            "WHERE usl.userInfo.id = :userId " +
+            "WHERE usl.userId = :userId " +
             "AND usl.longLeverage >= :leverage " +
             "AND usl.shortLeverage >= :leverage " +
             "AND usl.exchange.name IN :exchanges")
