@@ -65,8 +65,8 @@ pipeline {
                         "POSTGRES_PASS=${env.POSTGRES_PASS}",
                         "DB_HOST=${env.DB_HOST}",
                         "SECRET_NUMBER=${env.SECRET_NUMBER}",
-                        "ALGORITHM=${env.ALGORITHM}"
-                        "USERS_URL=${env.USERS_URL}"
+                        "ALGORITHM=${env.ALGORITHM}",
+                        "USERS_URL=${env.USERS_URL}",
                         "USER_EXCHANGE=${env.USER_EXCHANGE}"
                     ]) {
                         sh '''
