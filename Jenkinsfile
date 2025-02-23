@@ -81,8 +81,8 @@ pipeline {
                             -e DB_HOST="$DB_HOST" \
                             -e SECRET_NUMBER="$SECRET_NUMBER" \
                             -e ALGORITHM="$ALGORITHM" \
-                            -e USERS_URL="USERS_URL" \
-                            -e USER_EXCHANGE="USER_EXCHANGE" \
+                            -e USERS_URL="$USERS_URL" \
+                            -e USER_EXCHANGE="$USER_EXCHANGE" \
                             ${registry}:${BUILD_NUMBER}
                         '''
                     }
