@@ -142,6 +142,7 @@ public class BinanceFeatureClient implements MarketDataClient {
             Map<String, LeverageDto> leverageMap = leverages.stream()
                     .collect(Collectors.toMap(LeverageDto::getSymbol, Function.identity()));
             BracketDto leverageData = leverageMap.get(symbol).getBrackets().get(0);
+           log.info("Get leverage response: {}", leverageData);
             return LeverageSizeDto.builder()
                     .symbol(symbol)
                     .maxLongLeverage(leverageData.getInitialLeverage().longValue())

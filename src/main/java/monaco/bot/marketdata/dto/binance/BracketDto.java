@@ -27,4 +27,16 @@ public class BracketDto {
 
     private Double cum;
 
+    @Override
+    public String toString() {
+        return "BracketDto{" +
+                "bracket=" + bracket +
+                ", initialLeverage=" + initialLeverage +
+                ", notionalCap=" + notionalCap +
+                ", notionalFloor=" + notionalFloor +
+                ", maintMarginRatio=" + maintMarginRatio +
+                ", cum=" + cum +
+                '}';
+    }
+
 }
