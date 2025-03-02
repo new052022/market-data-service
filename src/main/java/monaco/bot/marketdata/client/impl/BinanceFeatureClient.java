@@ -175,7 +175,7 @@ public class BinanceFeatureClient implements MarketDataClient {
     public  List<SymbolConfigDto> getSymbolConfig(String symbol, String apiKey, String secretKey, String exchange) {
         List<SymbolConfigDto> leverages = this.getSymbolConfigResponse(apiKey, secretKey);
       return leverages.stream()
-              .filter(symbolConfig -> !Objects.nonNull(symbolConfig) ||
+              .filter(symbolConfig -> !Objects.nonNull(symbol) ||
                       symbolConfig.getSymbol().equalsIgnoreCase(symbol))
               .toList();
     }

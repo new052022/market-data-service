@@ -66,7 +66,7 @@ public class AssetPriceController {
     @GetMapping("/{userId}/symbol-config")
     @ApiResponse(responseCode = "200", description = "Success")
     @Operation(tags = "Asset-price controller", description = "Get user symbol config")
-    public ResponseEntity< List<SymbolConfigDto>> getUserSymbolConfig(@PathVariable Long userId, String exchange,
+    public ResponseEntity<List<SymbolConfigDto>> getUserSymbolConfig(@PathVariable Long userId, String exchange,
                                                                       String symbol) {
         return ResponseEntity.ok(exchangesIntegrationService.getSymbolConfig(userId, exchange ,symbol));
     }
