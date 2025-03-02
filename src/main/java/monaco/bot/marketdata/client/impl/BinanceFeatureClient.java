@@ -177,6 +177,7 @@ public class BinanceFeatureClient implements MarketDataClient {
       return leverages.stream()
               .filter(symbolConfig -> !Objects.nonNull(symbol) ||
                       symbolConfig.getSymbol().equalsIgnoreCase(symbol))
+              .peek(symbolConfig -> symbolConfig.setExchange(exchange))
               .toList();
     }
 

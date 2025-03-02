@@ -23,4 +23,6 @@ public class SymbolConfigDto {
 
     private String maxNotionalValue;
 
+    private String exchange;
+
 }

@@ -1,6 +1,7 @@
 package monaco.bot.marketdata.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import monaco.bot.marketdata.dto.SymbolConfigDto;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.model.UserSymbolLeverage;
 import monaco.bot.marketdata.repository.UserSymbolLeverageRepository;
@@ -58,17 +59,17 @@ public class UserSymbolLeverageServiceImpl implements UserSymbolLeverageService 
                 .flatMap(exchange -> {
                     List<AssetContract> assetContracts = exchangeAssetMap.get(exchange);
                     return assetContracts.stream()
-                            .map(asset -> exchangesIntegrationService.getSymbolLeverage(userId, exchange, asset.getSymbol()));
+                            .map(asset -> exchangesIntegrationService.getSymbolConfig(userId, exchange, asset.getSymbol()));
                 })
-                .map(leverageSize -> UserSymbolLeverage.builder()
-                        .symbol(leverageSize.getSymbol())
-                        .shortLeverage(leverageSize.getMinShortLeverage() != null ? leverageSize.getMinShortLeverage() :
-                                leverageSize.getMaxShortLeverage())
-                        .longLeverage(leverageSize.getMinLongLeverage() != null ? leverageSize.getMinLongLeverage() :
-                                leverageSize.getMaxLongLeverage())
-                        .exchange(exchangeService.getExchangeByName(leverageSize.getExchange()))
+                .map(leverageSize -> {
+                    SymbolConfigDto symbolConfig = leverageSize.get(0);
+                    return UserSymbolLeverage.builder()
+                        .symbol(symbolConfig.getSymbol())
+                        .shortLeverage(symbolConfig.getLeverage().longValue())
+                        .longLeverage(symbolConfig.getLeverage().longValue())
+                        .exchange(exchangeService.getExchangeByName(symbolConfig.getExchange()))
                         .userId(userId)
-                        .build())
+                        .build();})
                 .collect(Collectors.toList());
     }
 
