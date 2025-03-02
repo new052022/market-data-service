@@ -75,7 +75,6 @@ public class AssetContractServiceImpl implements AssetContractService {
                     MarketDataClient client = marketDataClients.get(symbol.getExchange().getName());
                     UserExchangeResponseDto userExchange = exchangeMap.get(symbol.getExchange().getName());
                     try {
-
                     periodAssetPriceCandles = client.getPeriodAssetPriceCandles(
                             PeriodAssetPriceCandlesRequest.builder()
                                     .symbol(symbol.getSymbol())
