@@ -5,7 +5,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import monaco.bot.marketdata.dto.*;
+import monaco.bot.marketdata.dto.AssetCandleDto;
+import monaco.bot.marketdata.dto.AssetContractResponseDto;
+import monaco.bot.marketdata.dto.AssetPriceDto;
+import monaco.bot.marketdata.dto.ChangeLeverageDto;
+import monaco.bot.marketdata.dto.LeverageSizeDto;
+import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
+import monaco.bot.marketdata.dto.SymbolConfigDto;
+import monaco.bot.marketdata.dto.SymbolRequestDto;
+import monaco.bot.marketdata.dto.SymbolResponseDto;
 import monaco.bot.marketdata.service.impl.ExchangesIntegrationService;
 import monaco.bot.marketdata.service.interfaces.AssetContractService;
 import org.springframework.http.HttpStatus;
@@ -67,7 +75,7 @@ public class AssetPriceController {
     @ApiResponse(responseCode = "200", description = "Success")
     @Operation(tags = "Asset-price controller", description = "Get user symbol config")
     public ResponseEntity<List<SymbolConfigDto>> getUserSymbolConfig(@PathVariable Long userId, String exchange,
-                                                                      String symbol) {
+                                                                     String symbol) {
         return ResponseEntity.ok(exchangesIntegrationService.getSymbolConfig(userId, exchange ,symbol));
     }
 

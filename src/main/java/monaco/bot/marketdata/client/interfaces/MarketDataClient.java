@@ -1,6 +1,11 @@
 package monaco.bot.marketdata.client.interfaces;
 
-import monaco.bot.marketdata.dto.*;
+import monaco.bot.marketdata.dto.AssetCandleDto;
+import monaco.bot.marketdata.dto.AssetPriceDto;
+import monaco.bot.marketdata.dto.ChangeLeverageDto;
+import monaco.bot.marketdata.dto.LeverageSizeDto;
+import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
+import monaco.bot.marketdata.dto.SymbolConfigDto;
 import monaco.bot.marketdata.model.AssetContract;
 
 import java.util.List;

@@ -3,7 +3,14 @@ package monaco.bot.marketdata.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
-import monaco.bot.marketdata.dto.*;
+import monaco.bot.marketdata.dto.AssetCandleDto;
+import monaco.bot.marketdata.dto.AssetContractResponseDto;
+import monaco.bot.marketdata.dto.ExchangeSymbolsRequestDto;
+import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
+import monaco.bot.marketdata.dto.SymbolParamsDto;
+import monaco.bot.marketdata.dto.SymbolRequestDto;
+import monaco.bot.marketdata.dto.SymbolResponseDto;
+import monaco.bot.marketdata.dto.UserExchangeResponseDto;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.model.UserSymbolLeverage;
@@ -19,13 +26,13 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
 @Service
@@ -59,61 +66,95 @@ public class AssetContractServiceImpl implements AssetContractService {
 
     @Override
     public SymbolResponseDto getSymbolsByParams(SymbolRequestDto requestDto) {
-        Map<String, UserExchangeResponseDto> exchangeMap = usersService.getUsersExchanges(requestDto.getUserId())
+        Map<String, UserExchangeResponseDto> exchangeMap = this.getUserExchanges(requestDto);
+        List<UserSymbolLeverage> symbolLeverages = this.getSymbolLeverages(requestDto);
+        Map<String, List<AssetContract>> assets = this.getAssetContracts(exchangeMap);
+
+        Map<String, List<AssetCandleDto>> exchangeCandles = this.fetchCandlesAsync(symbolLeverages, requestDto, exchangeMap);
+
+        Map<String, List<AssetCandleDto>> filteredCandles = this.filterByVolume(exchangeCandles, requestDto.getVolume());
+        List<ExchangeSymbolsRequestDto> exchangeSymbols = this.convertToExchangeSymbolsRequestDto(filteredCandles, assets);
+
+        this.logStatistics(exchangeSymbols);
+
+        return this.buildSymbolResponse(requestDto, exchangeSymbols);
+    }
+
+    private Map<String, UserExchangeResponseDto> getUserExchanges(SymbolRequestDto requestDto) {
+        return usersService.getUsersExchanges(requestDto.getUserId())
                 .stream()
-                .filter(exchangeInfo -> requestDto.getExchanges().contains(exchangeInfo.getExchangeName()))
+                .filter(exchange -> requestDto.getExchanges().contains(exchange.getExchangeName()))
                 .collect(Collectors.toMap(UserExchangeResponseDto::getExchangeName, exchange -> exchange));
-        List<UserSymbolLeverage> symbolLeverages = userSymbolLeverageService.getSymbolsByUserIdAndLeverage(
+    }
+
+    private List<UserSymbolLeverage> getSymbolLeverages(SymbolRequestDto requestDto) {
+        return userSymbolLeverageService.getSymbolsByUserIdAndLeverage(
                 requestDto.getUserId(), requestDto.getLeverage(), requestDto.getExchanges());
-        Map<String, List<AssetContract>> assets = assetContractRepository.getAssetContractsByExchangeNameIn(
-                        new ArrayList<>(exchangeMap.keySet())).stream()
-                .collect(groupingBy(symbol -> symbol.getExchange().getName()));
+    }
+
+    private Map<String, List<AssetContract>> getAssetContracts(Map<String, UserExchangeResponseDto> exchangeMap) {
+        return assetContractRepository.getAssetContractsByExchangeNameIn(new ArrayList<>(exchangeMap.keySet()))
+                .stream()
+                .collect(Collectors.groupingBy(asset -> asset.getExchange().getName()));
+    }
+
+    private Map<String, List<AssetCandleDto>> fetchCandlesAsync(
+            List<UserSymbolLeverage> symbolLeverages, SymbolRequestDto requestDto,
+            Map<String, UserExchangeResponseDto> exchangeMap) {
+
         List<CompletableFuture<List<AssetCandleDto>>> futures = symbolLeverages.stream()
-                .map(symbol -> CompletableFuture.supplyAsync(() -> {
-                    List<AssetCandleDto> periodAssetPriceCandles = new ArrayList<>();
-                    MarketDataClient client = marketDataClients.get(symbol.getExchange().getName());
-                    UserExchangeResponseDto userExchange = exchangeMap.get(symbol.getExchange().getName());
-                    try {
-                        periodAssetPriceCandles = client.getPeriodAssetPriceCandles(
-                                PeriodAssetPriceCandlesRequest.builder()
-                                        .symbol(symbol.getSymbol())
-                                        .limit(requestDto.getLimit())
-                                        .interval(requestDto.getInterval())
-                                        .endTime(requestDto.getEndTime())
-                                        .startTime(requestDto.getStartTime())
-                                        .build(),
-                                userExchange.getApiKey(), userExchange.getSecretKey(), userExchange.getExchangeName());
-                    } catch (Exception e) {
-                        log.error("Period asset price candles retrieving failed with message: {}", e.getMessage());
-                    }
-                    return periodAssetPriceCandles;
-                }))
+                .map(symbol -> CompletableFuture.supplyAsync(() ->
+                        this.fetchCandleData(symbol, requestDto, exchangeMap)))
                 .toList();
-        Map<String, List<AssetCandleDto>> exchangeCandles = new HashMap<>();
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .flatMap(List::stream)
+                .collect(Collectors.groupingBy(AssetCandleDto::getExchange));
+    }
+
+    private List<AssetCandleDto> fetchCandleData(UserSymbolLeverage symbol, SymbolRequestDto requestDto,
+                                                 Map<String, UserExchangeResponseDto> exchangeMap) {
+        MarketDataClient client = marketDataClients.get(symbol.getExchange().getName());
+        UserExchangeResponseDto userExchange = exchangeMap.get(symbol.getExchange().getName());
+
         try {
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-            for (CompletableFuture<List<AssetCandleDto>> future : futures) {
-                List<AssetCandleDto> candles = future.get();
-                candles.forEach(candle -> {
-                    exchangeCandles.computeIfAbsent(candle.getExchange(), k -> new ArrayList<>()).add(candle);
-                });
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Error occurred while executing parallel requests: {}", e.getMessage());
+            return client.getPeriodAssetPriceCandles(
+                   PeriodAssetPriceCandlesRequest.builder()
+                           .endTime(requestDto.getEndTime())
+                           .limit(requestDto.getLimit())
+                           .interval(requestDto.getInterval())
+                           .startTime(requestDto.getStartTime())
+                           .symbol(symbol.getSymbol())
+                           .build(),
+                    userExchange.getApiKey(), userExchange.getSecretKey(), userExchange.getExchangeName());
+        } catch (Exception e) {
+            log.error("Failed to fetch candle data for symbol {} on exchange {}: {}",
+                    symbol.getSymbol(), symbol.getExchange().getName(), e.getMessage());
+            return Collections.emptyList();
         }
-        Map<String, List<AssetCandleDto>> candleMap = this.filterByVolume(exchangeCandles, requestDto.getVolume());
-        List<ExchangeSymbolsRequestDto> exchangeSymbols = this.convertToExchangeSymbolsRequestDto(candleMap, assets);
-        log.info("[TRADING BOT] Time: {} | Market-data-service | getSymbolsByParams" +
-                        " | exchanges' number: {} | symbols' number for first exchange: {} | symbols' number for second exchange if exists: {} " +
-                        "| action: {}",
-                Timestamp.from(Instant.now()), exchangeSymbols.size(), exchangeSymbols.get(0).getSymbols().stream()
-                        .map(SymbolParamsDto::getSymbol)
-                        .distinct()
-                        .toList().size(), exchangeSymbols.get(exchangeSymbols.size() - 1).getSymbols().stream()
-                        .map(SymbolParamsDto::getSymbol)
-                        .distinct()
-                        .toList().size(),
-                "get symbols by leverage and volume params");
+    }
+
+    private void logStatistics(List<ExchangeSymbolsRequestDto> exchangeSymbols) {
+        log.info("[TRADING BOT] Time: {} | Market-data-service | getSymbolsByParams | exchanges: " +
+                        "{} | first exchange symbols: {} | last exchange symbols: {} | " +
+                        "action: get symbols by leverage and volume params",
+                Timestamp.from(Instant.now()), exchangeSymbols.size(),
+                getDistinctSymbols(exchangeSymbols.get(0)),
+                getDistinctSymbols(exchangeSymbols.get(exchangeSymbols.size() - 1)));
+    }
+
+    private int getDistinctSymbols(ExchangeSymbolsRequestDto exchange) {
+        return (int) exchange.getSymbols().stream()
+                .map(SymbolParamsDto::getSymbol)
+                .distinct()
+                .count();
+    }
+
+    private SymbolResponseDto buildSymbolResponse(SymbolRequestDto requestDto,
+                                                  List<ExchangeSymbolsRequestDto> exchangeSymbols) {
         return SymbolResponseDto.builder()
                 .volume(requestDto.getVolume())
                 .userId(requestDto.getUserId())
