@@ -5,11 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
-import monaco.bot.marketdata.dto.AssetCandleDto;
-import monaco.bot.marketdata.dto.AssetPriceDto;
-import monaco.bot.marketdata.dto.ChangeLeverageDto;
-import monaco.bot.marketdata.dto.LeverageSizeDto;
-import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
+import monaco.bot.marketdata.dto.*;
 import monaco.bot.marketdata.dto.binance.BracketDto;
 import monaco.bot.marketdata.dto.binance.CandleStickDataDto;
 import monaco.bot.marketdata.dto.binance.LeverageDto;
@@ -70,6 +66,8 @@ public class BinanceFeatureClient implements MarketDataClient {
     public static String PRICE_PATH = "/ticker/price";
 
     public static final String LEVERAGE_BRACKET = "/leverageBracket";
+
+    public static final String SYMBOLS_CONFIG = "/symbolConfig";
 
     public static final String EXCHANGE_INFO = "/exchangeInfo";
 
@@ -147,8 +145,8 @@ public class BinanceFeatureClient implements MarketDataClient {
                     .symbol(symbol)
                     .maxLongLeverage(leverageData.getInitialLeverage().longValue())
                     .maxShortLeverage(leverageData.getInitialLeverage().longValue())
-                    .longLeverage(leverageData.getBracket().longValue())
-                    .shortLeverage(leverageData.getBracket().longValue())
+                    .minLongLeverage(leverageData.getBracket().longValue())
+                    .minShortLeverage(leverageData.getBracket().longValue())
                     .exchange(exchange)
                     .build();
         }
@@ -171,6 +169,34 @@ public class BinanceFeatureClient implements MarketDataClient {
                 .leverage(Objects.requireNonNull(leverageResponse).getLeverage())
                 .symbol(leverageResponse.getSymbol())
                 .build();
+    }
+
+    @Override
+    public  List<SymbolConfigDto> getSymbolConfig(String symbol, String apiKey, String secretKey, String exchange) {
+        List<SymbolConfigDto> leverages = this.getSymbolConfigResponse(apiKey, secretKey);
+      return leverages.stream()
+              .filter(symbolConfig -> !Objects.nonNull(symbolConfig) ||
+                      symbolConfig.getSymbol().equalsIgnoreCase(symbol))
+              .toList();
+    }
+
+    @SneakyThrows
+    private List<SymbolConfigDto> getSymbolConfigResponse(String encodedApiKey, String encodedSecretKey) {
+        String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
+        String recvWindows = "15000";
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
+        String params = this.getAssetsLeverageString(secretKey, time, recvWindows);
+        String requestUrl = this.getRequestUrl(SYMBOLS_CONFIG, params);
+        HttpHeaders headers = this.addHttpHeaders(BINANCE_API_KEY_NAME, apiKey);
+        String leverageResponse = restTemplate.exchange(
+                requestUrl, HttpMethod.GET, new HttpEntity<>(headers), String.class).getBody();
+        List<SymbolConfigDto> leverageList = objectMapper.readValue(leverageResponse,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, SymbolConfigDto.class));
+        log.info("[TRADING BOT] Time: {} | Market-data-service | getSymbolConfigResponse" +
+                        " | number of assets' leverages : {} | action: {}",
+                Timestamp.from(Instant.now()), leverageList.size(), "fetch assets' leverages");
+        return leverageList;
     }
 
     @SneakyThrows

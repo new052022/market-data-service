@@ -41,4 +41,9 @@ public class ExchangesIntegrationService {
        return marketDataClients.get(exchange).updateSymbolLeverage(symbol, leverage,
                side, userInfo.getApiKey(), userInfo.getSecretKey());
     }
+
+    public  List<SymbolConfigDto> getSymbolConfig(Long userId, String exchange, String symbol) {
+        UserExchangeResponseDto userInfo = usersService.getUserExchangeInfoByUserId(userId, exchange);
+        return marketDataClients.get(exchange).getSymbolConfig(symbol, userInfo.getApiKey(), userInfo.getSecretKey(), exchange);
+    }
 }

@@ -62,9 +62,9 @@ public class UserSymbolLeverageServiceImpl implements UserSymbolLeverageService 
                 })
                 .map(leverageSize -> UserSymbolLeverage.builder()
                         .symbol(leverageSize.getSymbol())
-                        .shortLeverage(leverageSize.getShortLeverage() != null ? leverageSize.getShortLeverage() :
+                        .shortLeverage(leverageSize.getMinShortLeverage() != null ? leverageSize.getMinShortLeverage() :
                                 leverageSize.getMaxShortLeverage())
-                        .longLeverage(leverageSize.getLongLeverage() != null ? leverageSize.getLongLeverage() :
+                        .longLeverage(leverageSize.getMinLongLeverage() != null ? leverageSize.getMinLongLeverage() :
                                 leverageSize.getMaxLongLeverage())
                         .exchange(exchangeService.getExchangeByName(leverageSize.getExchange()))
                         .userId(userId)

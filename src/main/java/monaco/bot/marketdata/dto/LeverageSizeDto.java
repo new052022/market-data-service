@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class LeverageSizeDto {
 
-    private Long longLeverage;
+    private Long minLongLeverage;
 
-    private Long shortLeverage;
+    private Long minShortLeverage;
 
     private Long maxLongLeverage;
 

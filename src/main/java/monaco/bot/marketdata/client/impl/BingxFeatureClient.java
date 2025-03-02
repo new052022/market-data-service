@@ -5,15 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
-import monaco.bot.marketdata.dto.AssetCandleDto;
-import monaco.bot.marketdata.dto.AssetContractDataDto;
-import monaco.bot.marketdata.dto.AssetPriceDataDto;
-import monaco.bot.marketdata.dto.AssetPriceDto;
-import monaco.bot.marketdata.dto.ChangeLeverageDto;
-import monaco.bot.marketdata.dto.ChangeLeverageResponseDto;
-import monaco.bot.marketdata.dto.LeverageSizeDto;
-import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
-import monaco.bot.marketdata.dto.SymbolLeverageResponseDto;
+import monaco.bot.marketdata.dto.*;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.service.interfaces.ExchangeService;
@@ -113,6 +105,11 @@ public class BingxFeatureClient implements MarketDataClient {
                 ChangeLeverageResponseDto.class).getBody()).getData();
         data.setSymbol(symbol);
         return data;
+    }
+
+    @Override
+    public  List<SymbolConfigDto> getSymbolConfig(String symbol, String apiKey, String secretKey, String exchange) {
+        return null;
     }
 
     @SneakyThrows
