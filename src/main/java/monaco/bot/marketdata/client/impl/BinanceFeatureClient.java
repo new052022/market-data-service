@@ -10,6 +10,7 @@ import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.ChangeLeverageDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
+import monaco.bot.marketdata.dto.binance.BracketDto;
 import monaco.bot.marketdata.dto.binance.CandleStickDataDto;
 import monaco.bot.marketdata.dto.binance.LeverageDto;
 import monaco.bot.marketdata.dto.binance.exchangeInfo.AssetInfoDto;
@@ -140,13 +141,13 @@ public class BinanceFeatureClient implements MarketDataClient {
         } else {
             Map<String, LeverageDto> leverageMap = leverages.stream()
                     .collect(Collectors.toMap(LeverageDto::getSymbol, Function.identity()));
-            long leverage = leverageMap.get(symbol).getBrackets().get(0).getInitialLeverage().longValue();
+            BracketDto leverageData = leverageMap.get(symbol).getBrackets().get(0);
             return LeverageSizeDto.builder()
                     .symbol(symbol)
-                    .maxLongLeverage(leverage)
-                    .maxShortLeverage(leverage)
-                    .longLeverage(leverage)
-                    .shortLeverage(leverage)
+                    .maxLongLeverage(leverageData.getInitialLeverage().longValue())
+                    .maxShortLeverage(leverageData.getInitialLeverage().longValue())
+                    .longLeverage(leverageData.getBracket().longValue())
+                    .shortLeverage(leverageData.getBracket().longValue())
                     .exchange(exchange)
                     .build();
         }
