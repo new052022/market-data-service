@@ -110,6 +110,7 @@ public class AssetContractServiceImpl implements AssetContractService {
         return assetContractRepository.findAll();
     }
 
+    @Override
     @Scheduled(cron = "0 0 */12 * * *")
     @Transactional
     public void updateAssetContracts() {

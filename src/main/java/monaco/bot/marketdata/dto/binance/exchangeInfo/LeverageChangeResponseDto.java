@@ -19,4 +19,13 @@ public class LeverageChangeResponseDto {
 
     private String symbol;
 
+    @Override
+    public String toString() {
+        return "LeverageChangeResponseDto{" +
+                "leverage=" + leverage +
+                ", maxNotionalValue='" + maxNotionalValue + '\'' +
+                ", symbol='" + symbol + '\'' +
+                '}';
+    }
+
 }

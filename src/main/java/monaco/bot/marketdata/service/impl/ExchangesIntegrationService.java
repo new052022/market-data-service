@@ -1,6 +1,7 @@
 package monaco.bot.marketdata.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.MarketDataClient;
 import monaco.bot.marketdata.dto.*;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExchangesIntegrationService {
@@ -34,6 +36,9 @@ public class ExchangesIntegrationService {
 
     public ChangeLeverageDto updateSymbolLeverage(Long userId, String exchange, String symbol, Long leverage, String side) {
         UserExchangeResponseDto userInfo = usersService.getUserExchangeInfoByUserId(userId, exchange);
-       return marketDataClients.get(exchange).updateSymbolLeverage(symbol, leverage, side, userInfo.getApiKey(), userInfo.getSecretKey());
+        log.info("Leverage of {} will be updated for user {} with exchange {}",
+                symbol, userInfo.getUserId(), userInfo.getExchangeName());
+       return marketDataClients.get(exchange).updateSymbolLeverage(symbol, leverage,
+               side, userInfo.getApiKey(), userInfo.getSecretKey());
     }
 }

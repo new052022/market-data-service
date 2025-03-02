@@ -17,4 +17,6 @@ public interface AssetContractService {
 
     List<AssetContract> getAll();
 
+    void updateAssetContracts();
+
 }

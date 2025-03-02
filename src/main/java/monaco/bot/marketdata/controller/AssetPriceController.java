@@ -15,6 +15,7 @@ import monaco.bot.marketdata.dto.SymbolRequestDto;
 import monaco.bot.marketdata.dto.SymbolResponseDto;
 import monaco.bot.marketdata.service.impl.ExchangesIntegrationService;
 import monaco.bot.marketdata.service.interfaces.AssetContractService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -91,6 +92,17 @@ public class AssetPriceController {
     @Operation(tags = "Asset-price controller", description = "Get symbols' data")
     public ResponseEntity<SymbolResponseDto> getSymbolData(SymbolRequestDto requestDto) {
         return ResponseEntity.ok(assetContractService.getSymbolsByParams(requestDto));
+    }
+
+    /** update asset contracts
+     */
+    @SneakyThrows
+    @PostMapping("/asset-contracts")
+    @ApiResponse(responseCode = "200", description = "Success")
+    @Operation(tags = "Asset-price controller", description = "Updatr asset-contracts")
+    public ResponseEntity<HttpStatus> updateAssetContracts() {
+        assetContractService.updateAssetContracts();
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
 }

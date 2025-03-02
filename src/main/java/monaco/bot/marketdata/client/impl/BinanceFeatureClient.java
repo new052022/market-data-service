@@ -164,6 +164,7 @@ public class BinanceFeatureClient implements MarketDataClient {
         LeverageChangeResponseDto leverageResponse = restTemplate.exchange(
                 requestUrl, HttpMethod.POST, new HttpEntity<>(headers),
                 LeverageChangeResponseDto.class).getBody();
+        log.info("Leverage updating response: {}", leverageResponse);
         return ChangeLeverageDto.builder()
                 .leverage(Objects.requireNonNull(leverageResponse).getLeverage())
                 .symbol(leverageResponse.getSymbol())

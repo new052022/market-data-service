@@ -1,7 +1,6 @@
 package monaco.bot.marketdata.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import monaco.bot.marketdata.client.interfaces.MarketDataClient;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.model.UserSymbolLeverage;
 import monaco.bot.marketdata.repository.UserSymbolLeverageRepository;
