@@ -71,9 +71,12 @@ public class AssetContractServiceImpl implements AssetContractService {
                 .collect(groupingBy(symbol -> symbol.getExchange().getName()));
         Map<String, List<AssetCandleDto>> exchangeCandles = symbolLeverages.stream()
                 .map(symbol -> {
+                    List<AssetCandleDto> periodAssetPriceCandles = new ArrayList<>();
                     MarketDataClient client = marketDataClients.get(symbol.getExchange().getName());
                     UserExchangeResponseDto userExchange = exchangeMap.get(symbol.getExchange().getName());
-                    return client.getPeriodAssetPriceCandles(
+                    try {
+
+                    periodAssetPriceCandles = client.getPeriodAssetPriceCandles(
                             PeriodAssetPriceCandlesRequest.builder()
                                     .symbol(symbol.getSymbol())
                                     .limit(requestDto.getLimit())
@@ -81,6 +84,10 @@ public class AssetContractServiceImpl implements AssetContractService {
                                     .endTime(requestDto.getEndTime())
                                     .startTime(requestDto.getStartTime())
                                     .build(), userExchange.getApiKey(), userExchange.getSecretKey(), userExchange.getExchangeName());
+                    } catch (Exception e){
+                        log.error("Period asset price candles retrieving was failed with message: {}", e.getMessage());
+                    }
+                    return periodAssetPriceCandles;
                 })
                 .flatMap(Collection::stream)
                 .collect(groupingBy(AssetCandleDto::getExchange));
