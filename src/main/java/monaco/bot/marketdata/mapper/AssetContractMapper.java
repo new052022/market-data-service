@@ -78,7 +78,23 @@ public abstract class AssetContractMapper {
                 .maxShortLeverage(Long.valueOf(leverageDto.getBrackets().get(0).getInitialLeverage()))
                 .maxLongLeverage(Long.valueOf(leverageDto.getBrackets().get(0).getInitialLeverage()))
                 .exchange(exchange)
+                .tradeMinQuantity(this.getTradeMinQuantity(symbol))
+                .tradeMinUSDT(this.getTradeMinUSDT(symbol))
                 .build();
+    }
+
+    private Double getTradeMinQuantity(SymbolDto symbol) {
+        return symbol.getFilters().stream()
+                .filter(filter -> filter.getFilterType().equals("LOT_SIZE"))
+                .map(filter -> Double.valueOf(filter.getMinQty()))
+                .findFirst().orElse(0.0);
+    }
+
+    private Double getTradeMinUSDT(SymbolDto symbol) {
+        return symbol.getFilters().stream()
+                .filter(filter -> filter.getFilterType().equals("MIN_NOTIONAL"))
+                .map(filter -> Double.valueOf(filter.getNotional()))
+                .findFirst().orElse(0.0);
     }
 
 }
