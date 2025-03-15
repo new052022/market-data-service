@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -167,33 +168,38 @@ public class BingxFeatureClient implements MarketDataClient {
     @Override
     public List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request,
                                                            String encodedApiKey, String encodedSecretKey, String exchange) {
-        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
-        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
-        String parametersString = this.getAssetPriceCandlesParamsString(request, secretKey);
-        String requestUrl = this.getRequestUrl(CANDLE_ASSET_PRICE_PATH, parametersString);
-        HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
-        HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
-        log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
-                        " | asset's params : {} | action: {}",
-                Timestamp.from(Instant.now()), request, "get period asset price candles");
-        AssetPriceDataDto data = restTemplate.exchange(requestUrl, HttpMethod.GET,
-                entity, AssetPriceDataDto.class).getBody();
-        return data.getData().stream()
+        List<AssetCandleDto> candles = new ArrayList<>();
+        for(String symbol : request.getSymbols()) {
+            String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+            String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
+            String parametersString = this.getAssetPriceCandlesParamsString(request, secretKey, symbol);
+            String requestUrl = this.getRequestUrl(CANDLE_ASSET_PRICE_PATH, parametersString);
+            HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
+            HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
+            log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
+                            " | asset's params : {} | action: {}",
+                    Timestamp.from(Instant.now()), request, "get period asset price candles");
+            AssetPriceDataDto data = restTemplate.exchange(requestUrl, HttpMethod.GET,
+                    entity, AssetPriceDataDto.class).getBody();
+            List<AssetCandleDto> assets = data.getData();
+            assets.forEach(asset -> asset.setSymbol(symbol));
+            candles.addAll(assets);
+        }
+        return candles.stream()
                 .peek(asset -> {
                     Double openPrice = asset.getOpen();
                     Double closePrice = asset.getClose();
-                    asset.setVolume(asset.getVolume() * ((openPrice + closePrice)/2));
-                })
-                .peek(asset -> asset.setSymbol(request.getSymbol()))
+                    asset.setVolume(asset.getVolume() * ((openPrice + closePrice)/2));})
                 .peek(asset -> asset.setExchange(exchange))
                 .collect(Collectors.toList());
     }
 
     @SneakyThrows
-    private String getAssetPriceCandlesParamsString(PeriodAssetPriceCandlesRequest request, String secretKey) {
+    private String getAssetPriceCandlesParamsString(PeriodAssetPriceCandlesRequest request,
+                                                    String secretKey, String symbol) {
         TreeMap<String, String> parameters = new TreeMap<>();
         parameters.put(TIMESTAMP, "" + new Timestamp(System.currentTimeMillis()).getTime());
-        parameters.put(SYMBOL, request.getSymbol());
+        parameters.put(SYMBOL, symbol);
         parameters.put(INTERVAL, request.getInterval());
         parameters.put(START_TIME, this.convertToMillisecs(request.getStartTime()) + "");
         parameters.put(END_TIME, this.convertToMillisecs(request.getEndTime()) + "");

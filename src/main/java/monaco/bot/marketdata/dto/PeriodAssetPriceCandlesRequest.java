@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PeriodAssetPriceCandlesRequest {
 
-    private String symbol;
+    private List<String> symbols;
 
     private String interval;
 
@@ -24,5 +25,7 @@ public class PeriodAssetPriceCandlesRequest {
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
+
+    private String exchange;
 
 }

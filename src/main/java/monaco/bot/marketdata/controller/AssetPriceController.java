@@ -48,9 +48,9 @@ public class AssetPriceController {
     @GetMapping("candles/{userId}")
     @ApiResponse(responseCode = "200", description = "Success")
     @Operation(tags = "Asset-price controller", description = "Get period asset's candle price")
-    public ResponseEntity<List<AssetCandleDto>> getAssetPriceCandles(@PathVariable Long userId, String exchange,
+    public ResponseEntity<List<AssetCandleDto>> getAssetPriceCandles(@PathVariable Long userId,
                                                                      PeriodAssetPriceCandlesRequest request) {
-        return ResponseEntity.ok(exchangesIntegrationService.getCandlesByInterval(userId, exchange, request));
+        return ResponseEntity.ok(exchangesIntegrationService.getCandlesByInterval(userId, request));
     }
 
     @SneakyThrows

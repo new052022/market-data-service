@@ -15,6 +15,7 @@ public class AssetCandleConverter {
                 .open(data.getOpenPrice())
                 .close(data.getClosePrice())
                 .time(data.getOpenTime())
+                .symbol(data.getSymbol())
                 .build();
     }
 

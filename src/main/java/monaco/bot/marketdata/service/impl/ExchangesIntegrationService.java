@@ -29,8 +29,9 @@ public class ExchangesIntegrationService {
         return marketDataClients.get(exchange).getAssetsPrices(userInfo.getApiKey(), userInfo.getSecretKey());
     }
 
-    public List<AssetCandleDto> getCandlesByInterval(Long userId, String exchange, PeriodAssetPriceCandlesRequest request) {
-        UserExchangeResponseDto userInfo = usersService.getUserExchangeInfoByUserId(userId, exchange);
+    public List<AssetCandleDto> getCandlesByInterval(Long userId, PeriodAssetPriceCandlesRequest request) {
+        String exchange = request.getExchange();
+        UserExchangeResponseDto userInfo = usersService.getUserExchangeInfoByUserId(userId,exchange);
        return marketDataClients.get(exchange).getPeriodAssetPriceCandles(request, userInfo.getApiKey(),
                userInfo.getSecretKey(), exchange);
     }

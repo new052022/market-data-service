@@ -127,7 +127,7 @@ public class AssetContractServiceImpl implements AssetContractService {
                            .limit(requestDto.getLimit())
                            .interval(requestDto.getInterval())
                            .startTime(requestDto.getStartTime())
-                           .symbol(symbol.getSymbol())
+                           .symbols(List.of(symbol.getSymbol()))
                            .build(),
                     userExchange.getApiKey(), userExchange.getSecretKey(), userExchange.getExchangeName());
         } catch (Exception e) {

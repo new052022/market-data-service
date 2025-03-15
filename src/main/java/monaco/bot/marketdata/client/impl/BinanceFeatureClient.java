@@ -105,28 +105,31 @@ public class BinanceFeatureClient implements MarketDataClient {
     public List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request, String apiKey,
                                                            String secretKey, String exchange) {
         List<CandleStickDataDto> data = new ArrayList<>();
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url + ASSET_CANDLE_PRICE_PATH)
-                .queryParam(SYMBOL, request.getSymbol())
-                .queryParam(INTERVAL, request.getInterval())
-                .queryParam(START_TIME, this.convertToMillisecs(request.getStartTime()))
-                .queryParam(END_TIME, this.convertToMillisecs(request.getEndTime()))
-                .queryParam(LIMIT, request.getLimit());
-        try {
-            String indexInfo = restTemplate.exchange(uriBuilder.toUriString(),
-                    HttpMethod.GET,
-                    null,
-                    String.class).getBody();
-       data = objectMapper.readValue(indexInfo, objectMapper.getTypeFactory()
-                .constructCollectionType(List.class, CandleStickDataDto.class));
-        log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
-                        " | asset's params : {} | action: {}",
-                Timestamp.from(Instant.now()), request, "get period asset price candles");
-        }catch (Exception e){
-            log.error("Get period asset price candles failed with message {}", e.getMessage());
+        for(String symbol : request.getSymbols()) {
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url + ASSET_CANDLE_PRICE_PATH)
+                    .queryParam(SYMBOL, symbol)
+                    .queryParam(INTERVAL, request.getInterval())
+                    .queryParam(START_TIME, this.convertToMillisecs(request.getStartTime()))
+                    .queryParam(END_TIME, this.convertToMillisecs(request.getEndTime()))
+                    .queryParam(LIMIT, request.getLimit());
+            try {
+                String indexInfo = restTemplate.exchange(uriBuilder.toUriString(),
+                        HttpMethod.GET,
+                        null,
+                        String.class).getBody();
+                List<CandleStickDataDto> response = objectMapper.readValue(indexInfo, objectMapper.getTypeFactory()
+                        .constructCollectionType(List.class, CandleStickDataDto.class));
+                response.forEach(candle -> candle.setSymbol(symbol));
+                data.addAll(response);
+                log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
+                                " | asset's params : {} | action: {}",
+                        Timestamp.from(Instant.now()), request, "get period asset price candles");
+            } catch (Exception e) {
+                log.error("Get period asset price candles failed with message {}", e.getMessage());
+            }
         }
         return data.stream()
                 .map(candleConverter::convertToAssetCandleDto)
-                .peek(asset -> asset.setSymbol(request.getSymbol()))
                 .peek(asset -> asset.setExchange(exchange))
                 .collect(Collectors.toList());
     }
