@@ -112,6 +112,7 @@ public class BinanceFeatureClient implements MarketDataClient {
                     .queryParam(START_TIME, this.convertToMillisecs(request.getStartTime()))
                     .queryParam(END_TIME, this.convertToMillisecs(request.getEndTime()))
                     .queryParam(LIMIT, request.getLimit());
+                log.info("URL for binance api to get candles: {}", uriBuilder.toUriString());
             try {
                 String indexInfo = restTemplate.exchange(uriBuilder.toUriString(),
                         HttpMethod.GET,

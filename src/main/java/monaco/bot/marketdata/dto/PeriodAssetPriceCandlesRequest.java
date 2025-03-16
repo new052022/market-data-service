@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.StringJoiner;
 
 @Data
 @Builder
@@ -27,5 +28,17 @@ public class PeriodAssetPriceCandlesRequest {
     private LocalDateTime endTime;
 
     private String exchange;
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", PeriodAssetPriceCandlesRequest.class.getSimpleName() + "[", "]")
+                .add("symbols=" + symbols)
+                .add("interval='" + interval + "'")
+                .add("limit=" + limit)
+                .add("startTime=" + startTime)
+                .add("endTime=" + endTime)
+                .add("exchange='" + exchange + "'")
+                .toString();
+    }
 
 }
