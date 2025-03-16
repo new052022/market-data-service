@@ -31,6 +31,7 @@ public class ExchangesIntegrationService {
 
     public List<AssetCandleDto> getCandlesByInterval(Long userId, PeriodAssetPriceCandlesRequest request) {
         String exchange = request.getExchange();
+        log.info("Input params for getting candles prices: {}", request);
         UserExchangeResponseDto userInfo = usersService.getUserExchangeInfoByUserId(userId,exchange);
        return marketDataClients.get(exchange).getPeriodAssetPriceCandles(request, userInfo.getApiKey(),
                userInfo.getSecretKey(), exchange);
