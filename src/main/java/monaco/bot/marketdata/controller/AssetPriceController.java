@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.AssetContractResponseDto;
 import monaco.bot.marketdata.dto.AssetPriceDto;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/asset-price")
@@ -51,6 +53,7 @@ public class AssetPriceController {
     @Operation(tags = "Asset-price controller", description = "Get period asset's candle price")
     public ResponseEntity<List<AssetCandleDto>> getAssetPriceCandles(@PathVariable Long userId,
                                                                      @RequestBody PeriodAssetPriceCandlesRequest request) {
+        log.info("User with id {} and request data {}", userId, request);
         return ResponseEntity.ok(exchangesIntegrationService.getCandlesByInterval(userId, request));
     }
 
