@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,11 +46,11 @@ public class AssetPriceController {
     }
 
     @SneakyThrows
-    @GetMapping("candles/{userId}")
+    @PostMapping("candles/{userId}")
     @ApiResponse(responseCode = "200", description = "Success")
     @Operation(tags = "Asset-price controller", description = "Get period asset's candle price")
     public ResponseEntity<List<AssetCandleDto>> getAssetPriceCandles(@PathVariable Long userId,
-                                                                     PeriodAssetPriceCandlesRequest request) {
+                                                                     @RequestBody PeriodAssetPriceCandlesRequest request) {
         return ResponseEntity.ok(exchangesIntegrationService.getCandlesByInterval(userId, request));
     }
 
