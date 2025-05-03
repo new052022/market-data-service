@@ -57,4 +57,6 @@ public class UserTradesHistoryResponseDto {
     // Время совершения сделки (Unix timestamp в миллисекундах)
     private long time;
 
+    private String exchange;
+
 }

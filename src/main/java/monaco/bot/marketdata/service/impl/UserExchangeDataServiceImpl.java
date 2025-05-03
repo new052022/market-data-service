@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -20,11 +21,35 @@ public class UserExchangeDataServiceImpl implements UserExchangeDataService {
 
     @Override
     public List<UserTradesHistoryResponseDto> getUsersTradeHistory(Long userId, String exchange) {
-        UserExchangeResponseDto userExchangeInfo = usersService.getUserExchangeInfoByUserId(userId, exchange);
-        String exchangeClientName = exchange + "-user";
-        BinancePersonalDataClient exchangeClient = personalDataClientMap.get(exchangeClientName);
-        return exchangeClient.getUserTradesHistory(
-                userExchangeInfo.getApiKey(), userExchangeInfo.getSecretKey());
+        if (Objects.isNull(exchange)) {
+            List<UserExchangeResponseDto> userExchangesList = usersService.getUsersExchanges(userId);
+            return userExchangesList.stream()
+                    .flatMap(userExchange -> this.fetchUserTradesForExchange(
+                            userExchange.getExchangeName(),
+                            userExchange.getApiKey(),
+                            userExchange.getSecretKey()).stream())
+                    .toList();
+        } else {
+            UserExchangeResponseDto userExchangeInfo = usersService.getUserExchangeInfoByUserId(userId, exchange);
+            return this.fetchUserTradesForExchange(
+                    exchange,
+                    userExchangeInfo.getApiKey(),
+                    userExchangeInfo.getSecretKey());
+        }
+    }
+
+    private List<UserTradesHistoryResponseDto> fetchUserTradesForExchange(
+            String exchangeName,
+            String apiKey,
+            String secretKey) {
+        String clientName = exchangeName + "-user";
+        BinancePersonalDataClient exchangeClient = personalDataClientMap.get(clientName);
+        if (exchangeClient == null) {
+            throw new IllegalArgumentException("Exchange client not found for: " + exchangeName);
+        }
+        return exchangeClient.getUserTradesHistory(apiKey, secretKey).stream()
+                .peek(userTrades -> userTrades.setExchange(exchangeName))
+                .toList();
     }
 
 }

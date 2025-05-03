@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -29,7 +30,8 @@ public class UserExchangeDataController {
     @GetMapping("{userId}")
     @ApiResponse(responseCode = "200", description = "Success")
     @Operation(tags = "User-exchange-data controller", description = "Get user's data")
-    public ResponseEntity<List<UserTradesHistoryResponseDto>> getAssetsPrices(@PathVariable Long userId, String exchange) {
+    public ResponseEntity<List<UserTradesHistoryResponseDto>> getAssetsPrices(@PathVariable Long userId,
+                                                                              @RequestParam(required = false) String exchange) {
         return ResponseEntity.ok(userExchangeDataService.getUsersTradeHistory(userId, exchange));
     }
 
