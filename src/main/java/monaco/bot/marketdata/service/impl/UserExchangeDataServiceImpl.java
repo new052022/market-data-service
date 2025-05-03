@@ -7,6 +7,7 @@ import monaco.bot.marketdata.dto.binance.user_trades.UserTradesHistoryResponseDt
 import monaco.bot.marketdata.service.interfaces.UserExchangeDataService;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +50,8 @@ public class UserExchangeDataServiceImpl implements UserExchangeDataService {
         }
         return exchangeClient.getUserTradesHistory(apiKey, secretKey).stream()
                 .peek(userTrades -> userTrades.setExchange(exchangeName))
+                .filter(trade -> trade.getRealizedPnl() != null &&
+                        trade.getRealizedPnl().compareTo(BigDecimal.ZERO) > 0)
                 .toList();
     }
 
