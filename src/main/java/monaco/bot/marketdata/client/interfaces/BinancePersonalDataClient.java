@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface BinancePersonalDataClient {
 
-    AccountInformationDto getAccountBalances(String encodedSecretKey, String encodedApiKey);
+    AccountInformationDto getAccountBalances(String encodedApiKey, String encodedSecretKey);
 
     List<UserTradesHistoryResponseDto> getUserTradesHistory(String encodedApiKey, String encodedSecretKey);
 

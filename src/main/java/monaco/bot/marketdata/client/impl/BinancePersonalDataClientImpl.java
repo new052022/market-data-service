@@ -48,7 +48,7 @@ public class BinancePersonalDataClientImpl implements BinancePersonalDataClient 
 
     @Override
     @SneakyThrows
-    public AccountInformationDto getAccountBalances(String encodedSecretKey, String encodedApiKey) {
+    public AccountInformationDto getAccountBalances(String encodedApiKey, String encodedSecretKey) {
         String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
         String recvWindows = "15000";
         String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
