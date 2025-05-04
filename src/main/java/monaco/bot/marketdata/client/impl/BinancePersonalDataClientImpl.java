@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import monaco.bot.marketdata.client.interfaces.BinancePersonalDataClient;
+import monaco.bot.marketdata.dto.AccountInformationDto;
 import monaco.bot.marketdata.dto.binance.user_trades.UserTradesHistoryResponseDto;
 import monaco.bot.marketdata.util.EncryptDecryptGenerator;
 import monaco.bot.marketdata.util.SignatureGenerator;
@@ -40,6 +41,29 @@ public class BinancePersonalDataClientImpl implements BinancePersonalDataClient 
     private String url;
 
     public static final String USER_TRADES_HISTORY = "/userTrades";
+
+    private final static String GENERAL_BINANCE_API = "https://fapi.binance.com";
+
+    public static final String BALANCE = "/fapi/v3/account";
+
+    @Override
+    @SneakyThrows
+    public AccountInformationDto getAccountBalances(String encodedSecretKey, String encodedApiKey) {
+        String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
+        String recvWindows = "15000";
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
+        String params = this.getEncryptedParams(secretKey, time, recvWindows);
+        String requestUrl = this.getAccountUrl(BALANCE, params);
+        HttpHeaders headers = this.addHttpHeaders(BINANCE_API_KEY_NAME, apiKey);
+        String responseBody = restTemplate.exchange(
+                requestUrl, HttpMethod.GET, new HttpEntity<>(headers), String.class).getBody();
+        AccountInformationDto accountInformation = objectMapper.readValue(responseBody, AccountInformationDto.class);
+        log.info("[TRADING BOT] Time: {} | Order-service | getBalances" +
+                        " | number of assets in balance : {} | action: {}",
+                Timestamp.from(Instant.now()), accountInformation.getAvailableBalance(), "fetch account balances");
+        return accountInformation;
+    }
 
     @SneakyThrows
     public List<UserTradesHistoryResponseDto> getUserTradesHistory(String encodedApiKey, String encodedSecretKey) {
@@ -84,8 +108,11 @@ public class BinancePersonalDataClientImpl implements BinancePersonalDataClient 
     }
 
     private String getRequestUrl(String path, String parameters) {
-        String urlStr = url + path + "?" + parameters;
-        return urlStr;
+        return url + path + "?" + parameters;
+    }
+
+    private String getAccountUrl(String path, String parameters) {
+        return GENERAL_BINANCE_API + path + "?" + parameters;
     }
 
     private HttpHeaders addHttpHeaders(String apiName, String apiKey) {

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import monaco.bot.marketdata.dto.AccountInformationDto;
 import monaco.bot.marketdata.dto.binance.user_trades.UserTradesHistoryResponseDto;
 import monaco.bot.marketdata.service.interfaces.UserExchangeDataService;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,15 @@ public class UserExchangeDataController {
     public ResponseEntity<List<UserTradesHistoryResponseDto>> getAssetsPrices(@PathVariable Long userId,
                                                                               @RequestParam(required = false) String exchange) {
         return ResponseEntity.ok(userExchangeDataService.getUsersTradeHistory(userId, exchange));
+    }
+
+    @SneakyThrows
+    @GetMapping("/account/{userId}")
+    @ApiResponse(responseCode = "200", description = "Success")
+    @Operation(tags = "User-exchange-data controller", description = "Get user's data")
+    public ResponseEntity<List<AccountInformationDto>> getUserAccountInfo(@PathVariable Long userId,
+                                                                          @RequestParam(required = false) String exchange) {
+        return ResponseEntity.ok(userExchangeDataService.getUserAccountInfo(userId, exchange));
     }
 
 }
