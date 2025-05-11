@@ -135,6 +135,7 @@ public class BingxFeatureClient implements MarketDataClient {
                 HttpMethod.GET,
                 entity,
                 String.class).getBody());
+        log.info("This is price response: {}", response);
         List<AssetPriceDto> assetPrices = objectMapper.readValue(response,
                 objectMapper.getTypeFactory().constructCollectionType(List.class, AssetPriceDto.class));
         log.info("[TRADING BOT] Time: {} | Market-data-service | get asset price" +
