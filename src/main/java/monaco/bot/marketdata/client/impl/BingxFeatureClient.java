@@ -182,11 +182,12 @@ public class BingxFeatureClient implements MarketDataClient {
             log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
                             " | asset's params : {} | action: {}",
                     Timestamp.from(Instant.now()), request, "get period asset price candles");
-            AssetPriceDataDto data = restTemplate.exchange(requestUrl, HttpMethod.GET,
-                    entity, AssetPriceDataDto.class).getBody();
-            List<AssetCandleDto> assets = data.getData();
-            assets.forEach(asset -> asset.setSymbol(symbol));
-            candles.addAll(assets);
+            String data = restTemplate.exchange(requestUrl, HttpMethod.GET,
+                    entity, String.class).getBody();
+            log.info("Response of asset price candle: {}", data);
+//            List<AssetCandleDto> assets = data.getData();
+//            assets.forEach(asset -> asset.setSymbol(symbol));
+//            candles.addAll(assets);
         }
         return candles.stream()
                 .peek(asset -> {
