@@ -6,11 +6,13 @@ import monaco.bot.marketdata.dto.binance.LeverageDto;
 import monaco.bot.marketdata.dto.binance.exchangeInfo.SymbolDto;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.model.Exchange;
+import monaco.bot.marketdata.model.FilterType;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -64,8 +66,31 @@ public abstract class AssetContractMapper {
                         .tradeMinLimit(asset.getTradeMinLimit())
                         .tradeMinUSDT(asset.getTradeMinUSDT())
                         .tradeMinQuantity(asset.getTradeMinQuantity())
+                        .filters(this.addFilters(asset))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    private Set<FilterType> addFilters(AssetDetailsDto asset) {
+        double quantityPrecision = asset.getQuantityPrecision();
+        double pricePrecision = asset.getPricePrecision();
+
+        // Вычисляем stepSize как 0.001, если precision = 3
+        double stepSize = 1 / Math.pow(10, quantityPrecision);
+
+        // Вычисляем tickSize как 0.01, если precision = 2
+        double tickSize = 1 / Math.pow(10, pricePrecision);
+
+        FilterType marketLotSizeFilter = new FilterType();
+        marketLotSizeFilter.setFilterType("MARKET_LOT_SIZE");
+        marketLotSizeFilter.setMinQty(stepSize);
+        marketLotSizeFilter.setStepSize(stepSize);
+
+        FilterType priceFilter = new FilterType();
+        priceFilter.setFilterType("PRICE_FILTER");
+        priceFilter.setTickSize(tickSize);
+
+        return Set.of(marketLotSizeFilter, priceFilter);
     }
 
     public AssetContract toAssetCandleDto(SymbolDto symbol, LeverageDto leverageDto, Exchange exchange) {
