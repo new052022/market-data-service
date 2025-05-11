@@ -16,6 +16,8 @@ import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SymbolConfigDto;
 import monaco.bot.marketdata.dto.SymbolLeverageResponseDto;
 import monaco.bot.marketdata.dto.bingx.BingxApiResponse;
+import monaco.bot.marketdata.dto.bingx.BingxCandleData;
+import monaco.bot.marketdata.dto.bingx.BingxCandleResponse;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.service.interfaces.ExchangeService;
@@ -25,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -172,22 +175,61 @@ public class BingxFeatureClient implements MarketDataClient {
     public List<AssetCandleDto> getPeriodAssetPriceCandles(PeriodAssetPriceCandlesRequest request,
                                                            String encodedApiKey, String encodedSecretKey, String exchange) {
         List<AssetCandleDto> candles = new ArrayList<>();
-        for(String symbol : request.getSymbols()) {
-            String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
-            String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
-            String parametersString = this.getAssetPriceCandlesParamsString(request, secretKey, symbol);
-            String requestUrl = this.getRequestUrl(CANDLE_ASSET_PRICE_PATH, parametersString);
-            HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
-            HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
-            log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles" +
-                            " | asset's params : {} | action: {}",
-                    Timestamp.from(Instant.now()), request, "get period asset price candles");
-            String data = restTemplate.exchange(requestUrl, HttpMethod.GET,
-                    entity, String.class).getBody();
-            log.info("Response of asset price candle: {}", data);
-//            List<AssetCandleDto> assets = data.getData();
-//            assets.forEach(asset -> asset.setSymbol(symbol));
-//            candles.addAll(assets);
+
+        for (String symbol : request.getSymbols()) {
+            try {
+                String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+                String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
+
+                // Строим параметры запроса
+                String parametersString = this.getAssetPriceCandlesParamsString(request, secretKey, symbol);
+                String requestUrl = this.getRequestUrl(CANDLE_ASSET_PRICE_PATH, parametersString);
+
+                HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
+                HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
+
+                log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles | asset's params : {} | action: {}",
+                        Timestamp.from(Instant.now()), request, "get period asset price candles");
+
+                ResponseEntity<String> responseEntity = restTemplate.exchange(
+                        requestUrl,
+                        HttpMethod.GET,
+                        entity,
+                        String.class
+                );
+
+                String response = Objects.requireNonNull(responseEntity.getBody());
+                log.info("Response of asset price candle: {}", response);
+
+                // Парсим полный ответ в BingxApiResponse<CandleData[]>
+                BingxCandleResponse apiResponse = objectMapper.readValue(response, BingxCandleResponse.class);
+                if (apiResponse.getCode() != 0) {
+                    throw new RuntimeException("Error from Bingx API: " + apiResponse.getMsg());
+                }
+
+                List<AssetCandleDto> assetCandles = new ArrayList<>();
+                if (apiResponse.getData() != null && apiResponse.getData().length > 0) {
+                    for (BingxCandleData data : apiResponse.getData()[0].getCandles()) {
+                        AssetCandleDto dto = AssetCandleDto.builder()
+                                .open(data.getOpen())
+                                .close(data.getClose())
+                                .high(data.getHigh())
+                                .low(data.getLow())
+                                .volume(data.getVolume())
+                                .time(Timestamp.from(Instant.ofEpochMilli(data.getTime())))
+                                .symbol(symbol)
+                                .exchange(exchange)
+                                .build();
+                        assetCandles.add(dto);
+                    }
+                }
+
+                candles.addAll(assetCandles);
+
+            } catch (Exception e) {
+                log.error("Failed to fetch candle data for symbol {}: {}", symbol, e.getMessage(), e);
+                throw new RuntimeException("Failed to fetch candle data for symbol " + symbol, e);
+            }
         }
         return candles.stream()
                 .peek(asset -> {
