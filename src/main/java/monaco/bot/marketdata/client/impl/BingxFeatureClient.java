@@ -122,7 +122,7 @@ public class BingxFeatureClient implements MarketDataClient {
     }
 
     @Override
-    public  List<SymbolConfigDto> getSymbolConfig(String symbol, String apiKey, String secretKey, String exchange) {
+    public List<SymbolConfigDto> getSymbolConfig(String symbol, String apiKey, String secretKey, String exchange) {
         return null;
     }
 
@@ -130,7 +130,7 @@ public class BingxFeatureClient implements MarketDataClient {
     public List<AssetPriceDto> getAssetsPrices(String encodedApiKey, String encodedSecretKey) {
         String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
         String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
-        String parametersString = this.getAssetParamsString("",secretKey);
+        String parametersString = this.getAssetParamsString("", secretKey);
         String requestUrl = this.getRequestUrl(ASSET_PRICE_PATH, parametersString);
         HttpHeaders httpHeaders = this.addHttpHeaders(BINGX_API_KEY_NAME, apiKey);
         HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
@@ -151,7 +151,7 @@ public class BingxFeatureClient implements MarketDataClient {
 
     @SneakyThrows
     @Override
-    public List<AssetContract> getAssetDetails(String encodedApiKey,String encodedSecretKey, String exchange) {
+    public List<AssetContract> getAssetDetails(String encodedApiKey, String encodedSecretKey, String exchange) {
         String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
         String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
         String parametersString = this.getAssetParamsString("", secretKey);
@@ -190,7 +190,7 @@ public class BingxFeatureClient implements MarketDataClient {
 
                 log.info("[TRADING BOT] Time: {} | Market-data-service | getPeriodAssetPriceCandles | asset's params : {} | action: {}",
                         Timestamp.from(Instant.now()), request, "get period asset price candles");
-
+                log.info("This is the link to get data: {}", requestUrl);
                 ResponseEntity<String> responseEntity = restTemplate.exchange(
                         requestUrl,
                         HttpMethod.GET,
@@ -235,7 +235,8 @@ public class BingxFeatureClient implements MarketDataClient {
                 .peek(asset -> {
                     Double openPrice = asset.getOpen();
                     Double closePrice = asset.getClose();
-                    asset.setVolume(asset.getVolume() * ((openPrice + closePrice)/2));})
+                    asset.setVolume(asset.getVolume() * ((openPrice + closePrice) / 2));
+                })
                 .peek(asset -> asset.setExchange(exchange))
                 .collect(Collectors.toList());
     }
@@ -268,7 +269,7 @@ public class BingxFeatureClient implements MarketDataClient {
     }
 
     @SneakyThrows
-    private String getAssetParamsString(String symbol,String secretKey) {
+    private String getAssetParamsString(String symbol, String secretKey) {
         TreeMap<String, String> parameters = new TreeMap<>();
         parameters.put(TIMESTAMP, "" + new Timestamp(System.currentTimeMillis()).getTime());
         parameters.put(SYMBOL, symbol);
