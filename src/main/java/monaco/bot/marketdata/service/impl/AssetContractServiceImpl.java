@@ -178,7 +178,6 @@ public class AssetContractServiceImpl implements AssetContractService {
         List<AssetContract> assetsToSave = new ArrayList<>();
         try {
             Map<String, UserExchangeResponseDto> exchanges = usersService.getUsersExchanges(1L).stream()
-                    .filter(exchange -> !exchange.getExchangeName().equalsIgnoreCase("Binance"))
                     .collect(Collectors.toMap(UserExchangeResponseDto::getExchangeName, Function.identity()));
             for (UserExchangeResponseDto exchange : exchanges.values()) {
                 log.info("Get asset contract for exchange: {}", exchange.getExchangeName());
