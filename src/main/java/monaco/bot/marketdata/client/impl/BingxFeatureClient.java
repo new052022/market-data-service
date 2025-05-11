@@ -15,6 +15,7 @@ import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SymbolConfigDto;
 import monaco.bot.marketdata.dto.SymbolLeverageResponseDto;
+import monaco.bot.marketdata.dto.bingx.BingxApiResponse;
 import monaco.bot.marketdata.mapper.AssetContractMapper;
 import monaco.bot.marketdata.model.AssetContract;
 import monaco.bot.marketdata.service.interfaces.ExchangeService;
@@ -135,12 +136,13 @@ public class BingxFeatureClient implements MarketDataClient {
                 HttpMethod.GET,
                 entity,
                 String.class).getBody());
-        log.info("This is price response: {}", response);
-        List<AssetPriceDto> assetPrices = objectMapper.readValue(response,
-                objectMapper.getTypeFactory().constructCollectionType(List.class, AssetPriceDto.class));
-        log.info("[TRADING BOT] Time: {} | Market-data-service | get asset price" +
-                        " | asset's name : {} | action: {}",
-                Timestamp.from(Instant.now()),assetPrices, "get asset price");
+        BingxApiResponse apiResponse = objectMapper.readValue(response, BingxApiResponse.class);
+        if (apiResponse.getCode() != 0) {
+            throw new RuntimeException("Error from Bingx API: " + apiResponse.getMsg());
+        }
+        List<AssetPriceDto> assetPrices = apiResponse.getData();
+        log.info("[TRADING BOT] Time: {} | Market-data-service | get asset price | asset's name : {} | action: {}",
+                Timestamp.from(Instant.now()), assetPrices, "get asset price");
         return assetPrices;
     }
 
