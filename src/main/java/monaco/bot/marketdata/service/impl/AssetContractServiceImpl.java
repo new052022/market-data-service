@@ -181,9 +181,11 @@ public class AssetContractServiceImpl implements AssetContractService {
                     .filter(exchange -> !exchange.getExchangeName().equalsIgnoreCase("Binance"))
                     .collect(Collectors.toMap(UserExchangeResponseDto::getExchangeName, Function.identity()));
             for (UserExchangeResponseDto exchange : exchanges.values()) {
+                log.info("Get asset contract for exchange: {}", exchange.getExchangeName());
                 MarketDataClient client = marketDataClients.get(exchange.getExchangeName());
                 List<AssetContract> assetDetails = client.getAssetDetails(
                         exchange.getApiKey(), exchange.getSecretKey(),exchange.getExchangeName());
+                log.info("The size of bingx assets is: {}", assetDetails.size());
                 assetsToSave.addAll(assetDetails);
             }
         } catch (Exception exception) {

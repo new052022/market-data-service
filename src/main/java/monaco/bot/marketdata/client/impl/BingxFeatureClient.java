@@ -158,15 +158,14 @@ public class BingxFeatureClient implements MarketDataClient {
         log.info("[TRADING BOT] Time: {} | Market-data-service | getAssetDetails" +
                         " | action: {}",
                 Timestamp.from(Instant.now()), "get asset details");
-        String data = restTemplate.exchange(
+        AssetContractDataDto data = restTemplate.exchange(
                 requestUrl,
                 HttpMethod.GET,
                 entity,
-                String.class).getBody();
+                AssetContractDataDto.class).getBody();
         log.info("This is contract response for Bingx: {}", data);
-        AssetContractDataDto response = new AssetContractDataDto();
         return assetContractMapper.fromAssetDetailsDtoListToAssetContractList(
-                response.getData(), exchangeService.getExchangeByName(exchange));
+                data.getData(), exchangeService.getExchangeByName(exchange));
     }
 
     @SneakyThrows
