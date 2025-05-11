@@ -250,7 +250,7 @@ public class BingxFeatureClient implements MarketDataClient {
         parameters.put(INTERVAL, request.getInterval());
         parameters.put(START_TIME, this.convertToMillisecs(request.getStartTime()) + "");
         parameters.put(END_TIME, this.convertToMillisecs(request.getEndTime()) + "");
-        parameters.put(LIMIT, String.valueOf(request.getLimit()));
+        parameters.put(LIMIT, String.valueOf(1440));
         String valueToDigest = this.getMessageToDigest(parameters);
         String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
         return valueToDigest + "&signature=" + signature;
