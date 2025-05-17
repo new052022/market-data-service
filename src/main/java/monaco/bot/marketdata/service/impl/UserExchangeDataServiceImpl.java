@@ -88,8 +88,7 @@ public class UserExchangeDataServiceImpl implements UserExchangeDataService {
         }
         return exchangeClient.getUserTradesHistory(apiKey, secretKey).stream()
                 .peek(userTrades -> userTrades.setExchange(exchangeName))
-                .filter(trade -> trade.getRealizedPnl() != null &&
-                        trade.getRealizedPnl().compareTo(BigDecimal.ZERO) > 0)
+                .filter(trade -> trade.getRealizedPnl() != null)
                 .toList();
     }
 
