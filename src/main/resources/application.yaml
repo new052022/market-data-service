@@ -42,6 +42,15 @@ spring:
       topics:
         event:
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
 users-service:
   url: ${USERS_URL}
   user-exchange-endpoint: ${USER_EXCHANGE}
