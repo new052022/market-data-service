@@ -29,4 +29,6 @@ public class Constants {
 
     public static final String BINANCE_API_KEY_NAME = "X-MBX-APIKEY";
 
+    public final static String MARGIN_TYPE = "marginType";
+
 }

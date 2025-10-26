@@ -8,6 +8,7 @@ import monaco.bot.marketdata.client.interfaces.MarketDataClient;
 import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.ChangeLeverageDto;
+import monaco.bot.marketdata.dto.ChangeMarginTypeDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SymbolConfigDto;
@@ -49,6 +50,7 @@ import static monaco.bot.marketdata.util.Constants.END_TIME;
 import static monaco.bot.marketdata.util.Constants.INTERVAL;
 import static monaco.bot.marketdata.util.Constants.LEVERAGE;
 import static monaco.bot.marketdata.util.Constants.LIMIT;
+import static monaco.bot.marketdata.util.Constants.MARGIN_TYPE;
 import static monaco.bot.marketdata.util.Constants.RECV_WINDOW;
 import static monaco.bot.marketdata.util.Constants.START_TIME;
 import static monaco.bot.marketdata.util.Constants.SYMBOL;
@@ -85,6 +87,8 @@ public class BinanceFeatureClient implements MarketDataClient {
     public static final String EXCHANGE_INFO = "/exchangeInfo";
 
     public static final String LEVERAGE_PATH = "/leverage";
+
+    public static final String MARGIN_TYPE_PATH = "/marginType";
 
     @Override
     @SneakyThrows
@@ -203,6 +207,26 @@ public class BinanceFeatureClient implements MarketDataClient {
               .toList();
     }
 
+    @Override
+    @SneakyThrows
+    public ChangeMarginTypeDto updateMarginType(String symbol, String marginType, String encodedApiKey, String encodedSecretKey) {
+        String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
+        String recvWindows = "15000";
+        String secretKey = encryptDecryptGenerator.decryptData(encodedSecretKey);
+        String apiKey = encryptDecryptGenerator.decryptData(encodedApiKey);
+        String params = this.getMarginTypeUpdateString(secretKey, time, recvWindows, symbol, marginType);
+        String requestUrl = this.getRequestUrl(MARGIN_TYPE_PATH, params);
+        HttpHeaders headers = this.addHttpHeaders(BINANCE_API_KEY_NAME, apiKey);
+        String marginResponse = restTemplate.exchange(
+                requestUrl, HttpMethod.POST, new HttpEntity<>(headers), String.class).getBody();
+        log.info("Margin type updating response: {}", marginResponse);
+        ChangeMarginTypeDto response = objectMapper.readValue(marginResponse, ChangeMarginTypeDto.class);
+        return ChangeMarginTypeDto.builder()
+                .symbol(response.getSymbol())
+                .marginType(response.getMarginType())
+                .build();
+    }
+
     @SneakyThrows
     private List<SymbolConfigDto> getSymbolConfigResponse(String encodedApiKey, String encodedSecretKey) {
         String time = "" + new Timestamp(System.currentTimeMillis()).getTime();
@@ -259,6 +283,19 @@ public class BinanceFeatureClient implements MarketDataClient {
         parameters.put(RECV_WINDOW, recvWindow);
         parameters.put(SYMBOL, symbol);
         parameters.put(LEVERAGE, leverage.toString());
+        String valueToDigest = this.getMessageToDigest(parameters);
+        String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
+        return valueToDigest + "&signature=" + signature;
+    }
+
+    @SneakyThrows
+    private String getMarginTypeUpdateString(String secretKey, String time, String recvWindow, String symbol,
+                                         String marginType) {
+        TreeMap<String, String> parameters = new TreeMap<>();
+        parameters.put(TIMESTAMP, time);
+        parameters.put(RECV_WINDOW, recvWindow);
+        parameters.put(SYMBOL, symbol);
+        parameters.put(MARGIN_TYPE, marginType);
         String valueToDigest = this.getMessageToDigest(parameters);
         String signature = SignatureGenerator.generateSignature(secretKey, valueToDigest);
         return valueToDigest + "&signature=" + signature;

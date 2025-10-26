@@ -6,6 +6,7 @@ import monaco.bot.marketdata.client.interfaces.MarketDataClient;
 import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.ChangeLeverageDto;
+import monaco.bot.marketdata.dto.ChangeMarginTypeDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SymbolConfigDto;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -81,6 +83,36 @@ public class ExchangesIntegrationService {
                                 .build();
                     }
                 })
+                .toList();
+    }
+
+    public List<ChangeMarginTypeDto> updateAllSymbolsMarginType(Long userId, String exchange, String marginType) {
+        UserExchangeResponseDto userInfo = usersService.getUserExchangeInfoByUserId(userId, exchange);
+        log.info("Margin type will be updated to {} for all symbols for user {} with exchange {}",
+                marginType, userInfo.getUserId(), userInfo.getExchangeName());
+
+        // Get all asset prices to extract symbols
+        List<AssetPriceDto> assetPrices = marketDataClients.get(exchange).getAssetsPrices(userInfo.getApiKey(), userInfo.getSecretKey());
+
+        // Update margin type for each symbol
+        return assetPrices.stream()
+                .map(asset -> {
+                    try {
+                        return marketDataClients.get(exchange).updateMarginType(
+                                asset.getSymbol(),
+                                marginType,
+                                userInfo.getApiKey(),
+                                userInfo.getSecretKey()
+                        );
+                    } catch (Exception e) {
+                        log.error("Failed to update margin type for symbol {}: {}", asset.getSymbol(), e.getMessage());
+                        return ChangeMarginTypeDto.builder()
+                                .symbol(asset.getSymbol())
+                                .marginType(null)
+                                .build();
+                    }
+                })
+                .filter(Objects::nonNull)
                 .toList();
     }
 }

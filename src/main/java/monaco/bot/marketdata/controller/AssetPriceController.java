@@ -10,6 +10,7 @@ import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.AssetContractResponseDto;
 import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.ChangeLeverageDto;
+import monaco.bot.marketdata.dto.ChangeMarginTypeDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SymbolConfigDto;
@@ -114,6 +115,21 @@ public class AssetPriceController {
     public ResponseEntity<List<ChangeLeverageDto>> changeAllSymbolsLeverage(@PathVariable Long userId, String exchange,
                                                                              Long leverage, String side) {
         return ResponseEntity.ok(exchangesIntegrationService.updateAllSymbolsLeverage(userId, exchange, leverage, side));
+    }
+
+    /**
+     * @param userId     user id
+     * @param exchange   Binance (only Binance supported)
+     * @param marginType ISOLATED/CROSSED
+     * @return List of ChangeMarginTypeDto with results for each symbol
+     */
+    @SneakyThrows
+    @PostMapping("/{userId}/all-symbols-margin-type")
+    @ApiResponse(responseCode = "200", description = "Success")
+    @Operation(tags = "Asset-price controller", description = "Change margin type for all symbols (Binance only)")
+    public ResponseEntity<List<ChangeMarginTypeDto>> changeAllSymbolsMarginType(@PathVariable Long userId, String exchange,
+                                                                                  String marginType) {
+        return ResponseEntity.ok(exchangesIntegrationService.updateAllSymbolsMarginType(userId, exchange, marginType));
     }
 
     @SneakyThrows

@@ -3,6 +3,7 @@ package monaco.bot.marketdata.client.interfaces;
 import monaco.bot.marketdata.dto.AssetCandleDto;
 import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.ChangeLeverageDto;
+import monaco.bot.marketdata.dto.ChangeMarginTypeDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SymbolConfigDto;
@@ -25,4 +26,6 @@ public interface MarketDataClient {
                                            String side, String apiKey, String secretKey);
 
     List<SymbolConfigDto> getSymbolConfig(String symbol, String apiKey, String secretKey, String exchange);
+
+    ChangeMarginTypeDto updateMarginType(String symbol, String marginType, String apiKey, String secretKey);
 }

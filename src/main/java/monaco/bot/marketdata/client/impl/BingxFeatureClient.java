@@ -11,6 +11,7 @@ import monaco.bot.marketdata.dto.AssetPriceDataDto;
 import monaco.bot.marketdata.dto.AssetPriceDto;
 import monaco.bot.marketdata.dto.ChangeLeverageDto;
 import monaco.bot.marketdata.dto.ChangeLeverageResponseDto;
+import monaco.bot.marketdata.dto.ChangeMarginTypeDto;
 import monaco.bot.marketdata.dto.LeverageSizeDto;
 import monaco.bot.marketdata.dto.PeriodAssetPriceCandlesRequest;
 import monaco.bot.marketdata.dto.SymbolConfigDto;
@@ -120,6 +121,12 @@ public class BingxFeatureClient implements MarketDataClient {
 
     @Override
     public  List<SymbolConfigDto> getSymbolConfig(String symbol, String apiKey, String secretKey, String exchange) {
+        return null;
+    }
+
+    @Override
+    public ChangeMarginTypeDto updateMarginType(String symbol, String marginType, String apiKey, String secretKey) {
+        log.warn("updateMarginType is not supported for Bingx exchange");
         return null;
     }
 
