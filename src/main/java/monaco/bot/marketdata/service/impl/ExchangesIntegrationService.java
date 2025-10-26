@@ -54,4 +54,33 @@ public class ExchangesIntegrationService {
         UserExchangeResponseDto userInfo = usersService.getUserExchangeInfoByUserId(userId, exchange);
         return marketDataClients.get(exchange).getSymbolConfig(symbol, userInfo.getApiKey(), userInfo.getSecretKey(), exchange);
     }
+
+    public List<ChangeLeverageDto> updateAllSymbolsLeverage(Long userId, String exchange, Long leverage, String side) {
+        UserExchangeResponseDto userInfo = usersService.getUserExchangeInfoByUserId(userId, exchange);
+        log.info("Leverage will be updated for all symbols for user {} with exchange {}", userInfo.getUserId(), userInfo.getExchangeName());
+
+        // Get all asset prices to extract symbols
+        List<AssetPriceDto> assetPrices = marketDataClients.get(exchange).getAssetsPrices(userInfo.getApiKey(), userInfo.getSecretKey());
+
+        // Update leverage for each symbol
+        return assetPrices.stream()
+                .map(asset -> {
+                    try {
+                        return marketDataClients.get(exchange).updateSymbolLeverage(
+                                asset.getSymbol(),
+                                leverage,
+                                side,
+                                userInfo.getApiKey(),
+                                userInfo.getSecretKey()
+                        );
+                    } catch (Exception e) {
+                        log.error("Failed to update leverage for symbol {}: {}", asset.getSymbol(), e.getMessage());
+                        return ChangeLeverageDto.builder()
+                                .symbol(asset.getSymbol())
+                                .leverage(null)
+                                .build();
+                    }
+                })
+                .toList();
+    }
 }

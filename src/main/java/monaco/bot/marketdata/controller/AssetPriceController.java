@@ -100,6 +100,22 @@ public class AssetPriceController {
         return ResponseEntity.ok(exchangesIntegrationService.updateSymbolLeverage(userId, exchange, symbol, leverage, side));
     }
 
+    /**
+     * @param userId   user id
+     * @param exchange Bingx/Binance
+     * @param leverage number
+     * @param side     LONG/SHORT
+     * @return
+     */
+    @SneakyThrows
+    @PostMapping("/{userId}/all-symbols-leverage")
+    @ApiResponse(responseCode = "200", description = "Success")
+    @Operation(tags = "Asset-price controller", description = "Change leverage for all symbols")
+    public ResponseEntity<List<ChangeLeverageDto>> changeAllSymbolsLeverage(@PathVariable Long userId, String exchange,
+                                                                             Long leverage, String side) {
+        return ResponseEntity.ok(exchangesIntegrationService.updateAllSymbolsLeverage(userId, exchange, leverage, side));
+    }
+
     @SneakyThrows
     @GetMapping("symbol-data")
     @ApiResponse(responseCode = "200", description = "Success")
